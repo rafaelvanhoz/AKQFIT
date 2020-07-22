@@ -1,4 +1,4 @@
-#AKFIT R Edition
+#AKQFIT R Edition
 #Rafel Vanhoz Ribeiro
 
 #INICIO
@@ -887,7 +887,7 @@ ycdcmm =log(Eres^-Alfa1*AspCd/(k0*Efic*FCd*Q0*Gepi))
 xcdcmm = log(Eres)
 cdcmm = cbind(ycdcmm, xcdcmm)
 cdcmm = as.data.frame(cdcmm)
-lm_cdcmm = tidy(summary(lm(cdcmm)))
+lm_cdcmm = tidy(lm(cdcmm))
 
 ycdrmm = log(Eres^alfa*Gth/((FCd*(Asp/AspCd)-1)*Q0*Gepi))
 xcdrmm = log(Eres)
