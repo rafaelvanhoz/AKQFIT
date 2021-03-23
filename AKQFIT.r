@@ -17,7 +17,10 @@ nls
 
 #Criando as variaveis a aprtir do dado de entrada.
 #O dado de entrada e um arquivo CVS delimitado por virgula e sem espaco.
-#A variavel data pega o arquivo de entrada por meio da funcao read.csv(). O file.choose() é uma funcao que abre uma janela para selecionar o arquivo desejado, nao precisando escrever o nome do input direto no codigo. O header indica se o arquivo possui cabecalho.
+#A variavel data pega o arquivo de entrada por meio da funcao read.csv(). 
+#O file.choose() é uma funcao que abre uma janela para selecionar o arquivo 
+#desejado, nao precisando escrever o nome do input direto no codigo. O header 
+#indica se o arquivo possui cabecalho.
 
 data = read.csv(file.choose(), header = TRUE)
     Isotopo = as.character(data$Isotopo)
@@ -971,6 +974,44 @@ colnames(covcor) = t(rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, 
 corrplot(covcor, method = 'color', type = 'lower')
 covcor = round(covcor, digits = 4)
 
+vetorx=0
+for (i in 1 : Ntotal) {
+  vetorx[i] = 0.95+i*1.005
+}
+
+xplot=0
+for (i in 1:Ntotal) {
+  xplot[i] = i
+}
+
+pointname = c(Isotopo, Isotopo)
+pointname2 = c(Egama, Egama)
+NN = N*2
+
+#REDISUOS PONDERADOS PELO DESVIO PADRAO PARA K0
+plot(c(Egama), (DD[(N+1):NN]/sY[(N+1):NN]), 
+     main = 'RESIDUOS PONDERADOS PELO DESVIO PADRAO - k0', 
+     ylab = '(Yexp-Yaju)/sigmaY', 
+     xlab = 'Energia (keV)', 
+     ylim = c(-7, 7),
+     pch = 20,
+     col = 'Blue')
+text(c(Egama), (DD[(N+1):NN]/sY[(N+1):NN]), labels = pointname, cex = 0.7, pos = 3)
+abline(a=0, b=0, h=c(2,-2), col = "lightgray", lty = 3)
+#text(xplot, (DD[(N+1):NN]/sY[(N+1):NN]), labels = pointname2, cex = 0.7, pos = 1)
+
+#REDISUOS PONDERADOS PELO DESVIO PADRAO PARA Q0
+plot(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), 
+     main = 'RESIDUOS PONDERADOS PELO DESVIO PADRAO - Q0', 
+     ylab = '(Yexp-Yaju)/sigmaY', 
+     xlab = 'Energia (keV)', 
+     ylim = c(-7, 7),
+     pch = 20,
+     col = 'red')
+text(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), labels = pointname, cex = 0.7, pos = 3)
+abline(a=0, b=0, h=c(2,-2), col = "lightgray", lty = 3)
+
+geom_err
 sink('Resultados.txt', append = FALSE, split = FALSE)
 'VALORES DOS PARAMETROS'
 '----------------------------------------------------------------'
