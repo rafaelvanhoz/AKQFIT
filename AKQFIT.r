@@ -1034,7 +1034,7 @@ for (i in 1:N) {
 #   ass[i] = log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))  
 # }
 # 
-# ass2 = 01
+# ass2 = 0
 # for (i in 1:N) {
 #   ass2[i] = log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))) 
 # }
