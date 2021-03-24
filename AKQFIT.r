@@ -653,6 +653,7 @@ lambda = 0.0001
 chi2 = -1
 recalcularY = 1
 chi2novo = 0
+loop = 1
 
 while(1) {
   if(recalcularY == 1) {
@@ -775,8 +776,8 @@ col4 = rbind(colsK0, colmK0, coliK0)
 
 X = cbind(col1, col2, col3, col4)
 
-vpar = Ginv(t(X) %*% Ginv(vY, tol = 0.00000000005*sqrt(.Machine$double.eps)) %*% X)
-par = vpar %*% t(X) %*% Ginv(vY, tol = 0.00000000005*sqrt(.Machine$double.eps)) %*% Y
+vpar = Ginv(t(X) %*% Ginv(vY, tol = 0.000000000000005*sqrt(.Machine$double.eps)) %*% X)
+par = vpar %*% t(X) %*% Ginv(vY, tol = 0.000000000000005*sqrt(.Machine$double.eps)) %*% Y
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -824,17 +825,18 @@ R = t(X) %*% invVy %*% X
   DD = Yy - Ynovo
   chi2novo = t(DD) %*% invVy %*% DD
   chidif = chi2novo - chi2
+  loop = loop + 1
   if (chidif >= 0) {
-    lambda = lambda * 6
+    lambda = lambda * 10
     recalcularY = 1
   } else {
-      lambda = lambda / 4
+      lambda = lambda / 5
       Anovo = A2 + DA
       A2 = Anovo
       chi2 = chi2novo
       recalcularY = 1
   }
-  if (isTRUE(abs(chidif) < 2.0) & isTRUE(abs(chidif) > 0.0000001)) {
+  if ((isTRUE(abs(chidif) < 2.0) & isTRUE(abs(chidif) > 0.0000001)) | loop == 100) {
     break
   }
 }
@@ -900,7 +902,8 @@ summary(lm(cdrmm))
 
 sY = sqrt(diag(vY))
 
-sAfinal = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 0.00000000005*sqrt(.Machine$double.eps)))))))
+sAfinal = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)))))))
+
 
 alfa = lm_cdcmm$estimate[2]
 sa = sAfinal[1]
@@ -943,11 +946,11 @@ for (i in 1:Ntotal) {
 pointname = c(Isotopo, Isotopo)
 pointname2 = c(Egama, Egama)
 
-plot(xplot, (DD/sY), main = 'RESIDUOS PONDERADOS PELO DESVIO PADRAO - k0 e Q0', ylab = 'Y-Yaju-sigmaY', xlab = 'elementos', ylim = c(-7, 7))
-text(xplot, (DD/sY), labels = pointname, cex = 0.7, pos = 3)
-text(xplot, (DD/sY), labels = pointname2, cex = 0.7, pos = 1)
-abline(3, 0, lty=3)
-abline(-3, 0, lty=3)
+# plot(xplot, (DD/sY), main = 'RESIDUOS PONDERADOS PELO DESVIO PADRAO - k0 e Q0', ylab = 'Y-Yaju-sigmaY', xlab = 'elementos', ylim = c(-7, 7))
+# text(xplot, (DD/sY), labels = pointname, cex = 0.7, pos = 3)
+# text(xplot, (DD/sY), labels = pointname2, cex = 0.7, pos = 1)
+# abline(3, 0, lty=3)
+# abline(-3, 0, lty=3)
 
 # ggplot(cdcmm, aes(x=xcdcmm, y=ycdcmm)) + geom_point() + geom_smooth(method="lm")
 # ggplot(cdrmm, aes(x=xcdrmm, y=ycdrmm)) + geom_point() + geom_smooth(method="lm")
@@ -957,7 +960,8 @@ paramfinal
 covcor = matrix(data = 0, nrow = nrow(abs(Ginv(Rlambda))), ncol = ncol(abs(Ginv(Rlambda))))
 for (i in 1:numpar) {
   for (j in 1:numpar) {
-    covcor[i,j] = Ginv(Rlambda, tol = 0.00000000005*sqrt(.Machine$double.eps))[i,j]/sqrt(Ginv(Rlambda, tol = 0.00000000005*sqrt(.Machine$double.eps))[i,i]*Ginv(Rlambda, tol = 0.00000000005*sqrt(.Machine$double.eps))[j,j])
+    covcor[i,j] = (Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,j])/sqrt(abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,i])*
+                                                                                   abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[j,j]))
   }
 }
 
@@ -1011,7 +1015,6 @@ plot(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]),
 text(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), labels = pointname, cex = 0.7, pos = 3)
 abline(a=0, b=0, h=c(2,-2), col = "lightgray", lty = 3)
 
-geom_err
 sink('Resultados.txt', append = FALSE, split = FALSE)
 'VALORES DOS PARAMETROS'
 '----------------------------------------------------------------'
