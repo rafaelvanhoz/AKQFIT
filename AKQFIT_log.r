@@ -58,8 +58,8 @@ data = read.csv(file.choose(), header = TRUE)
     sEfic =  data$sEfic
     Eres =  data$Eres
     sEres =  data$sEres
-    k0 =  data$k0
-    sk0 =  data$sk0
+    k0_lit =  data$k0
+    sk0_lit =  data$sk0
     FCd =  data$FCd
     sFCd =  data$sFCd
     Gepi =  data$Gepi
@@ -110,8 +110,8 @@ dataau = read.csv(file.choose(), header = TRUE)
     sEficau =  dataau$sEficau
     Eresau =  dataau$Eresau
     sEresau =  dataau$sEresau
-    k0au =  dataau$k0au
-    sk0au =  dataau$sk0au
+    k0au_lit =  dataau$k0au
+    sk0au_lit =  dataau$sk0au
     FCdau =  dataau$Fcdau
     sFCdau =  dataau$sFcdau
     Gepiau =  dataau$Gepiau
@@ -129,6 +129,7 @@ Aspau = (Naau*fzau*faau)/(Dau*Cau*Sau*wau)
 AspCdau = (NaCdau*fzCdau*faCdau)/(DCdau*CCdau*SCdau*wCdau)
 RCd = Asp/AspCd
 RCdau = Aspau/AspCdau
+
 
 #calculando os erros pela propagacao de erros
 Aspexp = expression((Na*fz*fa)/(D*C*S*w))
@@ -198,6 +199,10 @@ sAspCdau = AspCdau*sqrt((sNaCdau/NaCdau)^2 +
                           (sCCdau/CCdau)^2 + 
                           (sSCdau/SCdau)^2 + 
                           (swCdau/wCdau)^2)
+
+
+sRCd = sqrt((sAsp/Asp)^2+(sAspCd/AspCd)^2)
+sRCdau = sqrt((sAspau/Aspau)^2+(sAspCdau/AspCdau)^2)
 
 #teste para verificar se a incerteza esta batendo com o outro metodo de calculo:
 #sAsp2 = sqrt(((sNa/Na)^2 + (sfz/fz)^2 + (sfa/fa)^2 + (sD/D)^2 + (sC/C)^2 + (sS/S)^2 + (sw/w)^2)) * Asp 
@@ -269,12 +274,12 @@ Ysuperior = eval(Ys)
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
 
-Ym = expression(log(((FCdau * (Aspau / AspCdau) - 1) * (Gth * Gepiau)) / ((FCd * (Asp / AspCd) - 1) * Gthau * Gepi)))
-#Ym = expression(((FCdau * (Aspau / AspCdau) - 1) * (Gth * Gepiau)) / ((FCd * (Asp / AspCd) - 1) * Gthau * Gepi))
+Ym = expression(log(((FCdau * RCdau - 1) * (Gth * Gepiau)) / ((FCd * RCd - 1) * Gthau * Gepi)))
+#Ym = expression(((FCdau * RCdau - 1) * (Gth * Gepiau)) / ((FCd * RCd - 1) * Gthau * Gepi))
 Ymedio = 0
 for(i in 1:N){
    Ymedio[i] = log(((FCdau[idouro[i]] * (Aspau[idouro[i]] / AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) / ((FCd[i] * (Asp[i] / AspCd[i]) - 1) * (Gthau[idouro[i]] * Gepi[i])))
-  #Ymedio[i] = ((FCdau[idouro[i]] * (Aspau[idouro[i]] / AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) / ((FCd[i] * (Asp[i] / AspCd[i]) - 1) * (Gthau[idouro[i]] * Gepi[i]))
+   #Ymedio[i] = ((FCdau[idouro[i]] * RCdau[idouro[i]] - 1) * (Gth[i] * Gepiau[idouro[i]])) / ((FCd[i] * RCd[i] - 1) * (Gthau[idouro[i]] * Gepi[i]))
 }
 
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -318,6 +323,8 @@ dYmAspCdau = 0
 dYmFCdau = 0
 dYmGthau = 0
 dYmGepiau = 0
+dYmRCd = 0
+dYmRCdau = 0
 for (i in 1 : N) {
   dYmAsp[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * (FCd[i] * (1/AspCd[i]) * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])))
   dYmAspCd[i] = ((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * (FCd[i] * (Asp[i]/AspCd[i]^2) * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i]))
@@ -325,20 +332,24 @@ for (i in 1 : N) {
   dYmGth[i] = (FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * Gepiau[idouro[i]]/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i]))
   dYmGepi[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * ((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])))
   dYmAspau[i] = FCdau[idouro[i]] * (1/AspCdau[idouro[i]]) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i]))
+  dYmRCd[i] = -(((FCdau[idouro[i]] * RCdau[idouro[i]] - 1) * (Gth[i] * Gepiau[idouro[i]])) * (FCd[i] * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * RCd[i] - 1) * Gthau[idouro[i]] * Gepi[i])^2/(((FCdau[idouro[i]] * RCdau[idouro[i]] - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * RCd[i] - 1) * Gthau[idouro[i]] * Gepi[i])))
   dYmAspCdau[i] = -(FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]^2) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])))
   dYmFCdau[i] = (Aspau[idouro[i]]/AspCdau[idouro[i]]) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i]))
   dYmGthau[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * ((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])))
   dYmGepiau[i] = (FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * Gth[i]/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])/(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i]))
+  dYmRCdau[i] = FCdau[idouro[i]] * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * RCd[i] - 1) * Gthau[idouro[i]] * Gepi[i])/(((FCdau[idouro[i]] * RCdau[idouro[i]] - 1) * (Gth[i] * Gepiau[idouro[i]]))/((FCd[i] * RCd[i] - 1) * Gthau[idouro[i]] * Gepi[i]))
   #dYmAsp[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * (FCd[i] * (1/AspCd[i]) * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2)
   #dYmAspCd[i] = ((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * (FCd[i] * (Asp[i]/AspCd[i]^2) * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2
   #dYmFCd[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * ((Asp[i]/AspCd[i]) * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2)
   #dYmGth[i] = (FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * Gepiau[idouro[i]]/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])
-  #dYmFCdau[i] = (Aspau[idouro[i]]/AspCdau[idouro[i]]) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])
+  #dYmRCd[i] = -(((FCdau[idouro[i]] * RCdau[idouro[i]] - 1) * (Gth[i] * Gepiau[idouro[i]])) * (FCd[i] * Gthau[idouro[i]] * Gepi[i])/((FCd[i] * RCd[i] - 1) * Gthau[idouro[i]] * Gepi[i])^2)
   #dYmGepi[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * ((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2)
+  #dYmFCdau[i] = (Aspau[idouro[i]]/AspCdau[idouro[i]]) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])
   #dYmAspau[i] = FCdau[idouro[i]] * (1/AspCdau[idouro[i]]) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])
   #dYmAspCdau[i] = -(FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]^2) * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i]))
   #dYmGthau[i] = -(((FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) * ((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gepi[i])/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])^2)
   #dYmGepiau[i] = (FCdau[idouro[i]] * (Aspau[idouro[i]]/AspCdau[idouro[i]]) - 1) * Gth[i]/((FCd[i] * (Asp[i]/AspCd[i]) - 1) * Gthau[idouro[i]] * Gepi[i])
+  #dYmRCdau[i] = FCdau[idouro[i]] * (Gth[i] * Gepiau[idouro[i]])/((FCd[i] * RCd[i] - 1) * Gthau[idouro[i]] * Gepi[i])
 }
 
 
@@ -384,10 +395,11 @@ for (i in 1 : N) {
 
 vY = matrix(0, nrow = dim(matrix(Y))[1], ncol = dim(matrix(Y))[1])
 
+# & isTRUE(idouro[i - N] == idouro[j - N]) parametro de verificacao da irradiacao
 #covariancias entre YSuperior e YSuperior - Parte Diagonal
 for(i in 1:N) {
   for(j in i:N) {
-    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] == Egama[j]) & isTRUE(idouro[i] == idouro[j])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] == Egama[j])) {
       vY[i,j] = dYsAspCd[i] * dYsAspCd[j] * sAspCd[i]^2 + 
                 dYsFCd[i] * dYsFCd[j] * sFCd[i]^2 +
                 #dYsEfic[i] * dYsEfic[j] * sEfic[i]^2 +
@@ -398,10 +410,22 @@ for(i in 1:N) {
 }
 
 
+# #covariancias entre YSuperior e YSuperior - Isotopo diferente
+# for(i in 1:N) {
+#   for(j in i:N) {
+#     if(isTRUE(Isotopo[i] != Isotopo[j]) & isTRUE(Egama[i] != Egama[j])) {
+#       vY[i,j] =  dYsEfic[i] * dYsEfic[j] * sEfic[i]^2
+#       vY[j,i] = vY[i,j]
+#     }
+#   }
+# }
+
+
+
 #covariancias entre YSuperior e YSuperior - Parte nao diagonal, mesmo isotopo, gama diferente
 for(i in 1:N) {
   for(j in i + 1:N) {
-    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] != Egama[j]) & isTRUE(idouro[i] == idouro[j])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] != Egama[j])) {
       vY[i,j] = dYsFCd[i] * dYsFCd[j] * sFCd[i]^2 + 
                 #dYsEfic[i] * dYsEfic[j] * sEfic[i]^2 +
                 dYsGepi[i] * dYsGepi[j] * sGepi[i]^2
@@ -413,19 +437,22 @@ for(i in 1:N) {
 #covariancias entre YMedio e YMedio - Parte diagonal
 for(i in (N + 1):(N * 2)) {
   for(j in (i):(N * 2)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] == Egama[j - N]) & isTRUE(idouro[i - N] == idouro[j - N])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] == Egama[j - N])) {
       k = i - N
       l = j - N
-      vY[i,j] = dYmAsp[k] * dYmAsp[l] * sAsp[k]^2 +
-                dYmAspCd[k] * dYmAspCd[l] * sAspCd[k]^2 + 
+      vY[i,j] = 
+                #dYmAsp[k] * dYmAsp[l] * sAsp[k]^2 +
+                #dYmAspCd[k] * dYmAspCd[l] * sAspCd[k]^2 + 
+                dYmRCd[k] * dYmRCd[l] * sRCd[k]^2 +
                 dYmFCd[k] * dYmFCd[l] * sFCd[k]^2 + 
                 dYmGth[k] * dYmGth[l] * sGth[k]^2 + 
                 dYmGepi[k] * dYmGepi[l] * sGepi[k]^2 +
-                dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 +
+                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
                 dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
-                dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2
+                dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2 +
+                dYmRCdau[k] * dYmRCdau[l] * sRCdau[idouro[k]]^2
       vY[j,i] = vY[i,j]
     }
   }
@@ -434,14 +461,14 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YMedio e YMedio - Parte nao diagonal, mesmo isotopo, gama diferente
 for(i in (N + 1):(N * 2)) {
   for(j in (i + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] == idouro[j - N])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N])) {
       k = i - N
       l = j - N
-      vY[i,j] = dYmFCd[k] * dYmFCd[l] * sFCd[k]^2 + 
+      vY[i,j] = dYmRCdau[idouro[k]] * dYmRCdau[idouro[l]] * sRCdau[idouro[k]]^2 + 
                 dYmGth[k] * dYmGth[l] * sGth[k]^2 + 
                 dYmGepi[k] * dYmGepi[l] * sGepi[k]^2 + 
-                dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 +
+                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
                 dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
                 dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2
@@ -452,17 +479,34 @@ for(i in (N + 1):(N * 2)) {
 
 
 
-#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente
+#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente, irradiacao diferente
+for(i in (N + 1):(N * 2)) {
+  for(j in (i + 1):(N * 2)) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] != idouro[j - N])) {
+      k = i - N
+      l = j - N
+      vY[i,j] = #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
+                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
+                dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
+                dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2
+      vY[j,i] = vY[i,j]
+    }
+  }
+}
+
+#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente, mesma irradiacao
 for(i in (N + 1):(N * 2)) {
   for(j in (i + 1):(N * 2)) {
     if(isTRUE(Isotopo[i - N] != Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] == idouro[j - N])) {
       k = i - N
       l = j - N
-      vY[i,j] = dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
-                dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
-                dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
-                dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
-                dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2
+      vY[i,j] = #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
+        #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+        dYmRCdau[idouro[k]] * dYmRCdau[idouro[l]] * sRCdau[idouro[k]]^2 +
+        dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
+        dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
+        dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2
       vY[j,i] = vY[i,j]
     }
   }
@@ -478,7 +522,7 @@ for(i in (N * 2 + 1):(N * 3)) {
                 dYiAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
                 dYiFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 + 
                 dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
-                dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2 +
+                #dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2 +
                 dYiAsp[k] * dYiAsp[l] * sAsp[k]^2 +
                 #dYiEfic[k] * dYiEfic[l] * sEfic[k]^2 +
                 dYiAspCd[k] * dYiAspCd[l] * sAspCd[k]^2 
@@ -493,7 +537,7 @@ for(i in (N * 2 + 1):(N * 3)) {
 #covariancias entre YInferior e YInferior - Parte nao Diagonal, mesmo isotopo, gama diferente
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]==idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2])) {
       k = i - N * 2
       l = j - N * 2
       vY[i,j] = dYiAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
@@ -509,7 +553,21 @@ for(i in (N * 2 + 1):(N * 3)) {
   }
 } 
 
-#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente
+#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente, irradiacao diferente
+for(i in (N * 2 + 1):(N * 3)) {
+  for(j in (i + 1):(N * 3)) {
+    if(isTRUE(Isotopo[i - N * 2] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]!=idouro[j - N * 2])) {
+      k = i - N * 2
+      l = j - N * 2
+      vY[i,j] = dYiFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 + 
+                dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2  
+                #dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2
+      vY[j,i] = vY[i,j]
+    }
+  }
+}
+
+#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente, mesma irradacao
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i + 1):(N * 3)) {
     if(isTRUE(Isotopo[i - N * 2] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]==idouro[j - N * 2])) {
@@ -518,17 +576,19 @@ for(i in (N * 2 + 1):(N * 3)) {
       vY[i,j] = dYiAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYiAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
                 dYiFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 + 
-                dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
-                dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2
-      vY[j,i] = vY[i,j]
+                dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2 +
+                dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2  
+        vY[j,i] = vY[i,j]
     }
   }
 }
 
+
+
 #covariancias entre YSuperior e YMedio - Parte diagonal - com Egama igual
 for(i in 1:N) {
   for(j in (N + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]==Egama[j - N]) & isTRUE(idouro[i]==idouro[j - N])) {
+    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]==Egama[j - N])) {
       k = j - N
       vY[i,j] = dYsAspCd[i] * dYmAspCd[k] * sAspCd[i]^2 +
                 dYsFCd[i] * dYmFCd[k] * sFCd[i]^2 +
@@ -541,7 +601,7 @@ for(i in 1:N) {
 #covariancias entre YSuperior e YMedio - Parte nao diagonal - Isotopo Igual, com Egama diferente
 for(i in 1:N) {
   for(j in (N + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]!=Egama[j - N]) & isTRUE(idouro[i]==idouro[j - N])) {
+    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]!=Egama[j - N])) {
       k = j - N
       vY[i,j] = dYsFCd[i] * dYmFCd[k] * sFCd[i]^2 + 
                 dYsGepi[i] * dYmGepi[k] * sGepi[i]^2 
@@ -554,7 +614,7 @@ for(i in 1:N) {
 #covariancias entre YSuperior e YInferior - Parte diagonal - Isotopo Igual, com Egama Igual
 for(i in 1:N) {
   for(j in (N * 2 + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] == Egama[j - N * 2]) & isTRUE(idouro[i] == idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] == Egama[j - N * 2])) {
       k = j - N * 2
       vY[i,j] = dYsAspCd[i] * dYmAspCd[k] * sAspCd[i]^2 +
                 dYsFCd[i] * dYmFCd[k] * sFCd[i]^2 +
@@ -569,7 +629,7 @@ for(i in 1:N) {
 #covariancias entre YSuperior e YInferior - Parte nao diagonal - Isotopo Igual, com Egama diferente
 for(i in 1:N) {
   for(j in (N * 2 + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] != Egama[j - N * 2]) & isTRUE(idouro[i] == idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] != Egama[j - N * 2])) {
       k = j - N * 2
       vY[i,j] = #dYsEfic[i] * dYiEfic[k] * sEfic[i]^2
                 dYsFCd[i] * dYiFCd[k] * sFCd[i]^2
@@ -578,11 +638,38 @@ for(i in 1:N) {
   }
 }
 
+#covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo diferente, mesma irradiacao
+for(i in (N + 1):(N * 2)) {
+  for(j in (N * 2):(N * 3)) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] == idouro[j - N * 2])) {
+      k = i - N
+      l = j - N * 2
+      vY[i,j] = dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
+        dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+        dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
+        dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2
+      vY[j,i] = vY[i,j]
+    }
+  }
+}
+
+#covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo diferente, irradiacao diferente
+for(i in (N + 1):(N * 2)) {
+  for(j in (N * 2):(N * 3)) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] != idouro[j - N * 2])) {
+      k = i - N
+      l = j - N * 2
+      vY[i,j] = dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
+                dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2
+      vY[j,i] = vY[i,j]
+    }
+  }
+}
 
 #covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo Igual, com Egama igual
 for(i in (N + 1):(N * 2)) {
   for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] == Egama[j - N * 2]) & isTRUE(idouro[i - N] == idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] == Egama[j - N * 2])) {
       k = i - N
       l = j - N * 2
       vY[i,j] = dYmAsp[k] * dYiAsp[l] * sAsp[k]^2 + 
@@ -592,7 +679,7 @@ for(i in (N + 1):(N * 2)) {
                 dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
                 dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
-                dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2
+                dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 
       vY[j,i] = vY[i,j]
     }
   }
@@ -601,7 +688,7 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo Igual, com Egama diferente
 for(i in (N + 1):(N * 2)) {
   for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] == idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2])) {
       k = i - N
       l = j - N * 2
       vY[i,j] = dYmFCd[k] * dYiFCd[l] * sFCd[k]^2 + 
@@ -609,58 +696,45 @@ for(i in (N + 1):(N * 2)) {
                 dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
                 dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
-                dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2
+                dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 
       vY[j,i] = vY[i,j]
     }
   }
 }
 
-#covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo diferente, com Egama diferente
-for(i in (N + 1):(N * 2)) {
-  for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] == idouro[j - N * 2])) {
-      k = i - N
-      l = j - N * 2
-      vY[i,j] = dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
-                dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
-                dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2
-      vY[j,i] = vY[i,j]
-    }
-  }
-}
 
-varsup = (dYsAspCd * sAspCd)^2 + (dYsEfic * sEfic)^2 + (dYsFCd * sFCd)^2 + (dYsGepi * sGepi)^2
 
-varmed = 0
-for (i in 1 : N) {
-  varmed[i] = (dYmAsp[i] * sAsp[i])^2 +
-              (dYmAspCd[i] * sAspCd[i])^2 +
-              (dYmFCd[i] * sFCd[i])^2 + 
-              (dYmGth[i] * sGth[i])^2 +
-              (dYmGepi[i] * sGepi[i])^2 +
-              (dYmAspau[idouro[i]] * sAspau[idouro[i]])^2 + 
-              (dYmAspCdau[idouro[i]] * sAspCdau[idouro[i]])^2 + 
-              (dYmFCdau[idouro[i]] * sFCdau[idouro[i]])^2 +
-              (dYmGepiau[idouro[i]] * sGepiau[idouro[i]])^2 +
-              (dYmGthau[idouro[i]] * sGthau[idouro[i]])^2
-}
+#varsup = (dYsAspCd * sAspCd)^2 + (dYsEfic * sEfic)^2 + (dYsFCd * sFCd)^2 + (dYsGepi * sGepi)^2
 
-varinf = 0
-for (i in 1 : N) {
-  varinf[i] = (dYiAsp[i] * sAsp[i])^2 + 
-              (dYiAspCd[i] * sAspCd[i])^2 + 
-              (dYiFCd[i] * sFCd[i])^2 + 
-              (dYiGth[i] * sGth[i])^2 + 
-              (dYiEfic[i] * sEfic[i])^2 +
-              (dYiAspau[idouro[i]] * sAspau[idouro[i]])^2 + 
-              (dYiAspCdau[idouro[i]] * sAspCdau[idouro[i]])^2 + 
-              (dYiFCdau[idouro[i]] * sFCdau[idouro[i]])^2 +
-              (dYiGthau[idouro[i]] * sGthau[idouro[i]])^2 + 
-              (dYiEficau[idouro[i]] * sEficau[idouro[i]])^2
-}
+# varmed = 0
+# for (i in 1 : N) {
+#   varmed[i] = (dYmAsp[i] * sAsp[i])^2 +
+#               (dYmAspCd[i] * sAspCd[i])^2 +
+#               (dYmFCd[i] * sFCd[i])^2 + 
+#               (dYmGth[i] * sGth[i])^2 +
+#               (dYmGepi[i] * sGepi[i])^2 +
+#               (dYmAspau[idouro[i]] * sAspau[idouro[i]])^2 + 
+#               (dYmAspCdau[idouro[i]] * sAspCdau[idouro[i]])^2 + 
+#               (dYmFCdau[idouro[i]] * sFCdau[idouro[i]])^2 +
+#               (dYmGepiau[idouro[i]] * sGepiau[idouro[i]])^2 +
+#               (dYmGthau[idouro[i]] * sGthau[idouro[i]])^2
+# }
 
-varY = c(varsup,varmed, varinf)
+# varinf = 0
+# for (i in 1 : N) {
+#   varinf[i] = (dYiAsp[i] * sAsp[i])^2 + 
+#               (dYiAspCd[i] * sAspCd[i])^2 + 
+#               (dYiFCd[i] * sFCd[i])^2 + 
+#               (dYiGth[i] * sGth[i])^2 + 
+#               (dYiEfic[i] * sEfic[i])^2 +
+#               (dYiAspau[idouro[i]] * sAspau[idouro[i]])^2 + 
+#               (dYiAspCdau[idouro[i]] * sAspCdau[idouro[i]])^2 + 
+#               (dYiFCdau[idouro[i]] * sFCdau[idouro[i]])^2 +
+#               (dYiGthau[idouro[i]] * sGthau[idouro[i]])^2 + 
+#               (dYiEficau[idouro[i]] * sEficau[idouro[i]])^2
+# }
+
+#varY = c(varsup,varmed, varinf)
 # vY = diag(varY)
 invVy = solve(vY)
 
@@ -683,8 +757,7 @@ chi2novo = 0
 loop = 1
 
 
-while(1) {
-  if(recalcularY == 1) {
+
     
     Aa = A2[1]
     Alfa1 = A2[2]
@@ -703,41 +776,62 @@ while(1) {
 #------------------------------------------------------------------------------------------------------------------------------------#
 
 #Yajusupexp = expression((exp(Aa) * Eres^(2*Alfa1) * k0b) * (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
-Yajusupexp = expression(Aa + (2 * Alfa1 * log(Eres)) + log(k0b) + log((((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
-            
+#Yajusupexp = expression(Aa + (2 * Alfa1 * log(Eres)) + log(k0b) + log((((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
+Yajusupexp = expression(log((exp(Aa) * Eres^(2*Alfa1) * k0b) * (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
 
+            
+dcolsexp_a = D(Yajusupexp, 'Aa')
 colsa = 0
 for (i in 1:N) {
+  colsa[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 
+             0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/
+             ((exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/
+             Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
   #colsa[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
-  colsa[i] = 1
 }
 colsa = matrix(colsa)
 
+dcolsexp_alfa = D(Yajusupexp, 'Alfa1')
 colsalfa = 0
 for (i in 1:N) {
   #colsalfa[i] = exp(Aa) * (Eres[i]^(2 * Alfa1) * (log(Eres[i]) * 2)) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - (exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)
-  colsalfa[i] = 2 * log(Eres[i]) - (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)/(((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
   #colsalfa[i] = (-(log(Eres[i])*(Q0b[IN[i]]-0.429))/Eres[i]^Alfa1+0.2564720733241612/((2*Alfa1+1)*0.55^Alfa1)-0.858/((2*Alfa1+1)^2*0.55^Alfa1))/((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1+0.429/((2*Alfa1+1)*0.55^Alfa1))+2*log(Eres[i])
-}
+  colsalfa[i] = (exp(Aa) * (Eres[i]^(2 * Alfa1) * (log(Eres[i]) * 2)) * k0b[i] *
+                   (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 +
+                   1) * 0.55^Alfa1))) - (exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) *
+                   (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 *
+                   log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) *
+                   (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2))/((exp(Aa) *
+                   Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+                   (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+  }
 colsalfa = matrix(colsalfa)
 
-colsQ0exp = D(Yajusupexp, 'Q0b')
+dcolsexp_Q0 = D(Yajusupexp, 'Q0b')
 colsQ0=0
 for (i in 1:N) {
   #colsQ0[i] = (exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (1/Eres[i]^Alfa1)
-  colsQ0[i] = 1/Eres[i]^Alfa1/(((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
+  #colsQ0[i] = 1/Eres[i]^Alfa1/(((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
+  colsQ0[i] = (exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (1/Eres[i]^Alfa1)/((exp(Aa) *
+              Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+              (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
 }
 colsq0Diag = monta_matriz_por_isotopo(colsQ0)
-colsq0Diag2 = diag(colsQ0)
+#colsq0Diag2 = diag(colsQ0)
 
+dcolsexp_k0 = D(Yajusupexp, 'k0b')
 colsK0 = 0
 for (i in 1:N) {
   #colsK0[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
-  colsK0[i] = 1/k0b[i]
+  #colsK0[i] = 1/k0b[i]
+   colsK0[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+               (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/((exp(Aa) * Eres[i]^(2 * Alfa1) *
+               k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 +
+               1) * 0.55^Alfa1))))
 }
+#colsK0 = eval(D(Yajusupexp, 'k0b'))
 colsK0 = diag(colsK0)
-# colsK0 = eval(D(Yajusupexp, 'k0b'))
-
+# 
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -749,11 +843,26 @@ Yajumedexp = expression(log((((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55
 
 colma = matrix(0, N)
 
-D(Yajumedexp, 'Alfa1')
+dcolmexp_alfa = D(Yajumedexp, 'Alfa1')
 colmalfa = 0
 for (i in 1 : N) {
-    colmalfa[i] = -(((0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) * (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0au[idouro[i]] - 0.429) * (Eresau[idouro[i]]^Alfa1 * log(Eresau[idouro[i]]))/(Eresau[idouro[i]]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))^2)/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))))
+    #colmalfa[i] = -(((0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) * (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0au[idouro[i]] - 0.429) * (Eresau[idouro[i]]^Alfa1 * log(Eresau[idouro[i]]))/(Eresau[idouro[i]]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))^2)/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))))
     #colmalfa[i] = (((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1+0.429/((2*Alfa1+1)*0.55^Alfa1))*((-(log(Eres[i])*(Q0b[IN[i]]-0.429))/Eres[i]^Alfa1+0.2564720733241612/((2*Alfa1+1)*0.55^Alfa1)-0.858/((2*Alfa1+1)^2*0.55^Alfa1))/((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1+0.429/((2*Alfa1+1)*0.55^Alfa1))-((-(log(Eresau[idouro[i]])*(Q0au[idouro[i]]-0.429))/Eresau[idouro[i]]^Alfa1+0.2564720733241612/((2*Alfa1+1)*0.55^Alfa1)-0.858/((2*Alfa1+1)^2*0.55^Alfa1))*((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1+0.429/((2*Alfa1+1)*0.55^Alfa1)))/((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1+0.429/((2*Alfa1+1)*0.55^Alfa1))^2))/((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1+0.429/((2*Alfa1+1)*0.55^Alfa1))
+    colmalfa[i] = -(((0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 *
+                  log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] -
+                  0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)/
+                  (((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + 
+                  (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - (((Q0b[IN[i]] -
+                  0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) *
+                  (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * 
+                  log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0au[idouro[i]] -
+                  0.429) * (Eresau[idouro[i]]^Alfa1 * log(Eresau[idouro[i]]))/
+                  (Eresau[idouro[i]]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/
+                  Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 
+                  0.55^Alfa1)))^2)/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+                  (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]] -
+                  0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 
+                  0.55^Alfa1)))))
 }
 colmalfa = matrix(colmalfa)
 
@@ -762,13 +871,20 @@ colmalfa = matrix(colmalfa)
  # for (i in 1 : N) {
  #   colmQ0[i] = 1/Eres[i]^Alfa1/(((Q0[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
  # }
+
+dcolmexp_Q0 = D(Yajumedexp, 'Q0b')
 colmQ0 = 0
 for (i in 1 : N) {
-   colmQ0[i] = 1/Eres[i]^Alfa1/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]]  - 0.429)/Eresau[idouro[i]] ^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+  #colmQ0[i] = 1/Eres[i]^Alfa1/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]]  - 0.429)/Eresau[idouro[i]] ^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
   #colmQ0[i] = 1/Eres[i]^Alfa1/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
+  colmQ0[i] = 1/Eres[i]^Alfa1/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) +
+              (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/((((Q0b[IN[i]] - 0.429)/
+              Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/
+              (((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/
+              ((2 * Alfa1 + 1) * 0.55^Alfa1))))
 }
 colmQ0Diag = monta_matriz_por_isotopo(colmQ0)
-colmQ0Diag2 = diag(colmQ0)
+#colmQ0Diag2 = diag(colmQ0)
 
 
 # for (i in 1 : N) {
@@ -783,12 +899,13 @@ colmK0 = diag(rep(0, nrow(colmQ0Diag)))
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
 
+Yajuinfexp = expression(log(k0b))
+
 colialfa = matrix(0, nrow(colmQ0Diag))
-
 colia = matrix(0, nrow(colmQ0Diag))
-
 coliQ0 = matrix(0, N, ncol(colsq0Diag))
 
+dcoli_k0 = D(Yajuinfexp, 'k0b')
 coliK0 = 0
 for (i in 1:N) {
   #coliK0[i] = 1
@@ -822,11 +939,14 @@ Yajusup = 0
 Yajumed = 0
 Yajuinf = 0
 
-R = t(X) %*% solve(vY) %*% X
+R = t(X) %*% invVy %*% X
 
+while(1) {
+  if(recalcularY == 1) {
 
     for (i in 1 : N) {
-      Yajusup[i] = Aa + (2 * Alfa1 * log(Eres[i])) + log(k0b[i]) + log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
+      #Yajusup[i] = Aa + (2 * Alfa1 * log(Eres[i])) + log(k0b[i]) + log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
+      Yajusup[i] = log(exp(Aa) * Eres[i]^(2*Alfa1) * k0b[i] * (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
       #Yajusup[i] = exp(Aa) * Eres[i]^(2*Alfa1) * k0b[i] * (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))
       #Yajumed[i] = (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))) / (((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))
       Yajumed[i] = log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))) / (((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
@@ -853,7 +973,7 @@ R = t(X) %*% solve(vY) %*% X
   }
   invRlambda = solve(Rlambda)
   #DA = Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)) %*% t(X) %*% invVy %*% Yy
-  DA = solve(Rlambda) %*% t(X) %*% invVy %*% Yy
+  DA = invRlambda %*% t(X) %*% invVy %*% Yy
   Ynovo = X %*% DA
   DD = Yy - Ynovo
   chi2novo = t(DD) %*% invVy %*% DD
@@ -869,7 +989,7 @@ R = t(X) %*% solve(vY) %*% X
       chi2 = chi2novo
       recalcularY = 1
   }
-  if ((isTRUE(abs(chidif) < 2.0) & isTRUE(abs(chidif) > 0.0000001)) | loop == 100) {
+  if ((isTRUE(abs(chidif) < 2.0) & isTRUE(abs(chidif) > 0.0000001)) | loop == 50) {
     break
   }
 }
@@ -921,7 +1041,7 @@ for (i in 1 : N) {
 
 #UTILIZANDO FUNCAO PARA VERIFICAR O INTERCEPTO DAS RETAS DO METODOS CD-COVERED MULTI-MONITOR (CDCMM) E CD-RATIO MULTI-MONITOR (CDRMM)
 
-ycdcmm = log(Eres^-Alfa1*AspCd/(k0*Efic*FCd*Q0*Gepi))
+ycdcmm = log(Eres^-alfa*AspCd/(k0*Efic*FCd*Q0*Gepi))
 xcdcmm = log(Eres)
 cdcmm = cbind(ycdcmm, xcdcmm)
 cdcmm = as.data.frame(cdcmm)
@@ -933,6 +1053,14 @@ cdrmm = cbind(ycdrmm, xcdrmm)
 cdrmm = as.data.frame(cdrmm)
 lm_cdrmm = tidy(lm(cdrmm))
 
+plot(ycdrmm ~ xcdrmm, 
+     xlab='log(Eres)', 
+     ylab = 'Y', 
+     ylim = c(-4.5, -3) , 
+     main = "DETERMINAÇÃO DE ALFA")
+abline(lm(cdrmm))
+mtext(bquote(Alfa == .(as.numeric(round(lm_cdrmm[2,2],6))) +- .(as.numeric(round(lm_cdrmm[2,3],6)))), side = 3, line = -1, adj = 1)
+
 sY = sqrt(diag(vY))
 
 #sAfinal = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)))))))
@@ -942,8 +1070,10 @@ sAfinal = matrix(sqrt(abs(diag(vpar))))
 #alfa = lm_cdcmm$estimate[2]
 #salfa = lm_cdcmm$std.error[2]
 sa = sAfinal[1]
-alfa = Afinal[2]
-salfa = sAfinal[2]
+alfa = as.numeric(lm_cdrmm[2,2])
+#alfa = Afinal[2]
+#salfa = sAfinal[2]
+salfa = as.numeric(lm_cdrmm[2,3])
 sQ0 = 0
 for (i in 1:nQ0) {
   sQ0[i] = matrix(sAfinal[i+2])
