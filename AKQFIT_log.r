@@ -11,6 +11,7 @@ library(scales) #Scales e uma bibioteca que configura, de modo facil, as notacoe
 library(corrplot)
 library(Hmisc)
 library(broom)
+library(CDFt)
 
 options(width = 1000)
 nls
@@ -201,28 +202,44 @@ sAspCdau = AspCdau*sqrt((sNaCdau/NaCdau)^2 +
                           (swCdau/wCdau)^2)
 
 
-sRCd = sqrt((sAsp/Asp)^2+(sAspCd/AspCd)^2)
-sRCdau = sqrt((sAspau/Aspau)^2+(sAspCdau/AspCdau)^2)
+sRCd = sqrt(
+  (sAsp/Asp)^2+
+  (sAspCd/AspCd)^2
+  )
+sRCdau = sqrt(
+  (sAspau/Aspau)^2+
+  (sAspCdau/AspCdau)^2
+  )
 
-#teste para verificar se a incerteza esta batendo com o outro metodo de calculo:
-#sAsp2 = sqrt(((sNa/Na)^2 + (sfz/fz)^2 + (sfa/fa)^2 + (sD/D)^2 + (sC/C)^2 + (sS/S)^2 + (sw/w)^2)) * Asp 
 
 #Define uma variavel que conta o total de linhas do arquivo de dados
 #Essa variavel sera utilizada para determinar o n dos loops, for e if.
-N = nrow(data)
+N = nrow(
+  data
+  )
 
 #Determina os valores de K0 e Q0 usando as mesmas expressoes utilizadas no COVAR
 #Estes valores serao utilizados para os valores iniciais dos porametros do levenberg-marquardt
 Aa = 25.538
 Alfa = Alfa[1]
-Q0alfac = ((Q0au - 0.429)/(Eresau**Alfa)+0.429/((2*Alfa+1)*(0.55**Alfa)))
+Q0alfac = (
+  (Q0au - 0.429)/(Eresau**Alfa)+0.429/((2*Alfa+1)*(0.55**Alfa))
+  )
 k0b=0
 Q0Ialfa=0
 Q0b = 0
 for (i in 1:N) {
-  k0b[i] = (Asp[i]-AspCd[i]/FCd[i])/(Aspau[idouro[i]]-AspCdau[idouro[i]]/FCdau[idouro[i]])*(Gthau[idouro[i]]*Eficau[idouro[i]])/(Gth[i]*Efic[i])
-  Q0Ialfa[i] = (( FCdau[idouro[i]]*RCdau[idouro[i]] - 1 )/(FCd[i]*RCd[i] - 1 )* (Gth[i]*Gepiau[idouro[i]] /( Gthau[idouro[i]]*Gepi[i]))*Q0alfac[idouro[i]])
-  Q0b[i] = ( Q0Ialfa[i]-0.429/((2*Alfa+1)*(0.55**Alfa)))*Eres[i]**Alfa + 0.429
+  k0b[i] = (
+    (Asp[i]-AspCd[i]/FCd[i])/(Aspau[idouro[i]]-AspCdau[idouro[i]]/
+    FCdau[idouro[i]])*(Gthau[idouro[i]]*Eficau[idouro[i]])/(Gth[i]*Efic[i])
+  )
+  Q0Ialfa[i] = (
+    (FCdau[idouro[i]]*RCdau[idouro[i]] - 1 )/(FCd[i]*RCd[i] - 1 )*
+    (Gth[i]*Gepiau[idouro[i]] /( Gthau[idouro[i]]*Gepi[i]))*Q0alfac[idouro[i]]
+    )
+  Q0b[i] = (
+    (Q0Ialfa[i]-0.429/((2*Alfa+1)*(0.55**Alfa)))*Eres[i]**Alfa + 0.429
+    )
 }
 
 #funcao para fazer matriz de q0
@@ -515,7 +532,7 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YInferior e YInferior - Parte Diagonal
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i):(N * 3)) {
-    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] == Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]==idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] == Egama[j - N * 2])) {
       k = i - N * 2
       l = j - N * 2
       vY[i,j] = dYiAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
@@ -736,7 +753,7 @@ for(i in (N + 1):(N * 2)) {
 
 #varY = c(varsup,varmed, varinf)
 # vY = diag(varY)
-invVy = solve(vY)
+
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -748,26 +765,15 @@ invVy = solve(vY)
 A2 = matrix(c(Aa, Alfa, Q0b, k0b))
 Nb = nrow(A2)
 
-#valores de lambda e parametros para o loop na hora de fazer a analise
-chidif = 1
-lambda = 1
-chi2 = -1
-recalcularY = 1
-chi2novo = 0
-loop = 1
-
-
-
-    
-    Aa = A2[1]
-    Alfa1 = A2[2]
-    Q0b = 0
-    for (i in 1:nQ0) {
-      Q0b[i] = A2[i+2]
-    }
-    for (i in 1 : N) {
-       k0b[i] = A2[(i + nQ0 + 2)]
-  }
+     Aa = A2[1]
+     Alfa1 = A2[2]
+  #   Q0b = 0
+  #   for (i in 1:nQ0) {
+  #     Q0b[i] = A2[i+2]
+  #   }
+  #   for (i in 1 : N) {
+  #      k0b[i] = A2[(i + nQ0 + 2)]
+  # }
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -934,6 +940,16 @@ par = vpar %*% t(X) %*% solve(vY) %*% Y
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
 
+#valores de lambda e parametros para o loop na hora de fazer a analise
+chidif = 1
+lambda = 0.01
+chi2 = -1
+recalcularY = 1
+chi2novo = 0
+loop = 1
+
+invVy = solve(vY)
+
 Yexp = matrix(Y)
 Yajusup = 0
 Yajumed = 0
@@ -956,8 +972,12 @@ while(1) {
     Yaju2 = matrix(c(Yajusup, Yajumed, Yajuinf))
     datb = Yexp - Yaju2
     Yy = Yexp - Yaju2
+    
     ss = cbind(Yexp, Yaju2)
+    cvm = -CramerVonMisesTwoSamples(Yexp, Yaju2)
+    #p_value = 1/6*exp(-CramerVonMisesTwoSamples(Yexp, Yaju2))
     if (chi2 == -1) {
+      #chi2 = sum((Yexp - Yaju2)^2/Yexp)
       chi2 = t(datb) %*% invVy %*% datb
     }
   }
@@ -976,20 +996,22 @@ while(1) {
   DA = invRlambda %*% t(X) %*% invVy %*% Yy
   Ynovo = X %*% DA
   DD = Yy - Ynovo
+  cvmnovo = -CramerVonMisesTwoSamples(Yy, Ynovo)
   chi2novo = t(DD) %*% invVy %*% DD
+  chidif2 = cvmnovo - cvm
   chidif = chi2novo - chi2
   loop = loop + 1
   if (chidif >= 0) {
-    lambda = lambda * 10
+    lambda = lambda * 2
     recalcularY = 1
   } else {
-      lambda = lambda / 5
+      lambda = lambda / 2
       Anovo = A2 + DA
       A2 = Anovo
       chi2 = chi2novo
       recalcularY = 1
   }
-  if ((isTRUE(abs(chidif) < 2.0) & isTRUE(abs(chidif) > 0.0000001)) | loop == 50) {
+  if ((isTRUE(abs(chidif) < 1.0) & isTRUE(abs(chidif) > 0.0000001)) | loop == 100) {
     break
   }
 }
@@ -1000,25 +1022,32 @@ numpar = ncol(X)
 Ntotal = N * 3
 gl = Ntotal - numpar
 quirednovo = abs(chi2novo/gl)
-qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do xhi-quadrado com nivel de significancia de 0.05
+qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do chi-quadrado com nivel de significancia de 0.05
 pchisq(chi2novo, df=gl, lower.tail=FALSE) # p-valor 
 
 
 a = Afinal[1]
 alfa = Afinal[2]
-Q0 = 0
-for (i in 1:nQ0) {
-  Q0[i] = matrix(Afinal[i+2])
-}
-k0=0
-for (i in 1 : N) {
-  k0[i] = matrix(Afinal[(i + nQ0 + 2)])
-}
 
-Q0 = 0
-for (i in 1:N) {
-  Q0[i] = Q0b[IN[i]]
-}
+# Q0 = 0
+# for (i in 1:nQ0) {
+#   Q0[i] = matrix(Afinal[i+2])
+# }
+
+# k0=0
+# for (i in 1 : N) {
+#   k0[i] = matrix(Afinal[(i + nQ0 + 2)])
+# }
+
+ Q0 = 0
+ for (i in 1:N) {
+   Q0[i] = Q0b[IN[i]]
+ }
+ 
+ k0=0
+ for (i in 1 : N) {
+   k0[i] = k0b[i]
+ }
 
 
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -1065,15 +1094,17 @@ sY = sqrt(diag(vY))
 
 #sAfinal = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)))))))
 
-sAfinal = matrix(sqrt(abs(diag(vpar))))
+sAfinal = matrix(sqrt(abs(diag(invRlambda))))
 
 #alfa = lm_cdcmm$estimate[2]
 #salfa = lm_cdcmm$std.error[2]
-sa = sAfinal[1]
-alfa = as.numeric(lm_cdrmm[2,2])
 #alfa = Afinal[2]
 #salfa = sAfinal[2]
+sa = sAfinal[1]
+
+alfa = as.numeric(lm_cdrmm[2,2])
 salfa = as.numeric(lm_cdrmm[2,3])
+
 sQ0 = 0
 for (i in 1:nQ0) {
   sQ0[i] = matrix(sAfinal[i+2])
@@ -1128,7 +1159,7 @@ for (i in 1:numpar) {
   for (j in 1:numpar) {
     #covcor[i,j] = vY[i,j]/sqrt(vY[i,i]*vY[j,j])
     #covcor[i,j] = (Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,j])/sqrt(abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,i])*abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[j,j]))
-    covcor[i,j] = (solve(Rlambda)[i,j])/sqrt(solve(Rlambda)[i,i]*solve(Rlambda)[j,j])
+    covcor[i,j] = (invRlambda[i,j])/(sqrt(abs(invRlambda[i,i]))*sqrt(abs(invRlambda[j,j])))
     #covcor[i,j] = vpar[i,j]/sqrt(abs(vpar[i,i])*abs(vpar[j,j]))
   }
 }
@@ -1146,8 +1177,8 @@ for (i in 1:numpar-2) {
 rownames(covcor) = rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, park0))))
 colnames(covcor) = t(rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, park0)))))
 
-corrplot(covcor, method = 'color', type = 'lower')
-covcor = round(covcor, digits = 4)
+# corrplot(covcor, method = 'color', type = 'lower')
+# covcor = round(covcor, digits = 4)
 
 vetorx=0
 for (i in 1 : Ntotal) {
@@ -1163,9 +1194,26 @@ pointname = c(Isotopo)
 pointname2 = c(Egama)
 NN = N*2
 
+#RESIDUOS DO K0
+plot( 
+  log(Eres), k0-k0_lit,  
+  main = 'RESIDUOS K0',
+  ylim = c(-4,4),
+  xlab = 'log(Eres)',
+  ylab = 'k0 (akqft)/k0 (literatura)',
+  col = 'Blue'
+  )
+abline(
+  h = 0
+  )
+abline(
+  h = c(-2,2),
+  lty = 3
+  )
+
 #REDISUOS PONDERADOS PELO DESVIO PADRAO PARA K0
 plot(Egama, (DD[(N+1):NN]/sY[(N+1):NN]), 
-     main = 'RESIDUOS PONDERADOS PELO DESVIO PADRAO - k0', 
+     main = 'RESIDUOS DO AJUSTE PONDERADOS PELO DESVIO PADRAO - k0', 
      ylab = '(Yexp-Yaju)/sigmaY', 
      xlab = 'Energia (keV)', 
      ylim = c(-7, 7),
@@ -1177,7 +1225,7 @@ abline(a=0, b=0, h=c(2,-2), col = "lightgray", lty = 3)
 
 #REDISUOS PONDERADOS PELO DESVIO PADRAO PARA Q0
 plot(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), 
-     main = 'RESIDUOS PONDERADOS PELO DESVIO PADRAO - Q0', 
+     main = 'RESIDUOS DO AJUSTE PONDERADOS PELO DESVIO PADRAO - Q0', 
      ylab = '(Yexp-Yaju)/sigmaY', 
      xlab = 'Energia (keV)', 
      ylim = c(-7, 7),
@@ -1197,10 +1245,6 @@ covcor
 sink()
 
 print(paramfinal)
-
-for (i in 1:N) {
-  aa = sum(Yy[i]^2/Yexp[i])
-}
 
 
 # ass = 0
