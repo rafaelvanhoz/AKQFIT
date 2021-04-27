@@ -1,4 +1,4 @@
-#AKQFIT R Edition
+#AKQFIT R Edition - SEM LOG
 #Rafel Vanhoz Ribeiro
 
 #INICIO
@@ -11,6 +11,7 @@ library(scales) #Scales e uma bibioteca que configura, de modo facil, as notacoe
 library(corrplot)
 library(Hmisc)
 library(broom)
+library(MASS)
 
 options(width = 1000)
 nls
@@ -22,7 +23,9 @@ nls
 #desejado, nao precisando escrever o nome do input direto no codigo. O header 
 #indica se o arquivo possui cabecalho.
 
-data = read.csv(file.choose(), header = TRUE)
+data = read.csv(
+  file.choose(), header = TRUE
+  )
     Isotopo = as.character(data$Isotopo)
     Na = data$Na
     sNa = data$sNa
@@ -74,7 +77,9 @@ data = read.csv(file.choose(), header = TRUE)
 
 #O dataau e identico ao data, porem e para os dados do ouro.
     
-dataau = read.csv(file.choose(), header = TRUE)
+dataau = read.csv(
+  file.choose(), header = TRUE
+  )
     Isotopoau = dataau$Isotopoau
     Naau = dataau$Naau
     sNaau = dataau$sNaau
@@ -130,42 +135,42 @@ AspCdau = (NaCdau*fzCdau*faCdau)/(DCdau*CCdau*SCdau*wCdau)
 RCd = Asp/AspCd
 RCdau = Aspau/AspCdau
 
-#calculando os erros pela propagacao de erros
-Aspexp = expression((Na*fz*fa)/(D*C*S*w))
-    dAspNa = eval(D(Aspexp, 'Na'))
-    dAspfz = eval(D(Aspexp, 'fz'))
-    dAspfa = eval(D(Aspexp, 'fa'))
-    dAspD = eval(D(Aspexp, 'D'))
-    dAspC = eval(D(Aspexp, 'C'))
-    dAspS = eval(D(Aspexp, 'S'))
-    dAspw = eval(D(Aspexp, 'w'))
-
-AspCdexp = expression((NaCd*fzCd*faCd)/(DCd*CCd*SCd*wCd))
-    dAspNaCd = eval(D(AspCdexp, 'NaCd'))
-    dAspfzCd = eval(D(AspCdexp, 'fzCd'))
-    dAspfaCd = eval(D(AspCdexp, 'faCd'))
-    dAspDCd = eval(D(AspCdexp, 'DCd'))
-    dAspCCd = eval(D(AspCdexp, 'CCd'))
-    dAspSCd = eval(D(AspCdexp, 'SCd'))
-    dAspwCd = eval(D(AspCdexp, 'wCd'))
-
-Aspexpau = expression((Naau*fzau*faau)/(Dau*Cau*Sau*wau))
-    dAspNaau = eval(D(Aspexpau, 'Naau'))
-    dAspfzau = eval(D(Aspexpau, 'fzau'))
-    dAspfaau = eval(D(Aspexpau, 'faau'))
-    dAspDau = eval(D(Aspexpau, 'Dau'))
-    dAspCau = eval(D(Aspexpau, 'Cau'))
-    dAspSau = eval(D(Aspexpau, 'Sau'))
-    dAspwau = eval(D(Aspexpau, 'wau'))
-
-AspCdexpau = expression((NaCdau*fzCdau*faCdau)/(DCdau*CCdau*SCdau*wCdau))
-    dAspNaCdau = eval(D(AspCdexpau, 'NaCdau'))
-    dAspfzCdau = eval(D(AspCdexpau, 'fzCdau'))
-    dAspfaCdau = eval(D(AspCdexpau, 'faCdau'))
-    dAspDCdau = eval(D(AspCdexpau, 'DCdau'))
-    dAspCCdau = eval(D(AspCdexpau, 'CCdau'))
-    dAspSCdau = eval(D(AspCdexpau, 'SCdau'))
-    dAspwCdau = eval(D(AspCdexpau, 'wCdau'))
+# #calculando os erros pela propagacao de erros (PARA TESTE)
+# Aspexp = expression((Na*fz*fa)/(D*C*S*w))
+#     dAspNa = eval(D(Aspexp, 'Na'))
+#     dAspfz = eval(D(Aspexp, 'fz'))
+#     dAspfa = eval(D(Aspexp, 'fa'))
+#     dAspD = eval(D(Aspexp, 'D'))
+#     dAspC = eval(D(Aspexp, 'C'))
+#     dAspS = eval(D(Aspexp, 'S'))
+#     dAspw = eval(D(Aspexp, 'w'))
+# 
+# AspCdexp = expression((NaCd*fzCd*faCd)/(DCd*CCd*SCd*wCd))
+#     dAspNaCd = eval(D(AspCdexp, 'NaCd'))
+#     dAspfzCd = eval(D(AspCdexp, 'fzCd'))
+#     dAspfaCd = eval(D(AspCdexp, 'faCd'))
+#     dAspDCd = eval(D(AspCdexp, 'DCd'))
+#     dAspCCd = eval(D(AspCdexp, 'CCd'))
+#     dAspSCd = eval(D(AspCdexp, 'SCd'))
+#     dAspwCd = eval(D(AspCdexp, 'wCd'))
+# 
+# Aspexpau = expression((Naau*fzau*faau)/(Dau*Cau*Sau*wau))
+#     dAspNaau = eval(D(Aspexpau, 'Naau'))
+#     dAspfzau = eval(D(Aspexpau, 'fzau'))
+#     dAspfaau = eval(D(Aspexpau, 'faau'))
+#     dAspDau = eval(D(Aspexpau, 'Dau'))
+#     dAspCau = eval(D(Aspexpau, 'Cau'))
+#     dAspSau = eval(D(Aspexpau, 'Sau'))
+#     dAspwau = eval(D(Aspexpau, 'wau'))
+# 
+# AspCdexpau = expression((NaCdau*fzCdau*faCdau)/(DCdau*CCdau*SCdau*wCdau))
+#     dAspNaCdau = eval(D(AspCdexpau, 'NaCdau'))
+#     dAspfzCdau = eval(D(AspCdexpau, 'fzCdau'))
+#     dAspfaCdau = eval(D(AspCdexpau, 'faCdau'))
+#     dAspDCdau = eval(D(AspCdexpau, 'DCdau'))
+#     dAspCCdau = eval(D(AspCdexpau, 'CCdau'))
+#     dAspSCdau = eval(D(AspCdexpau, 'SCdau'))
+#     dAspwCdau = eval(D(AspCdexpau, 'wCdau'))
 
 sAsp = Asp*sqrt(
   (sNa/Na)^2 + 
@@ -341,7 +346,6 @@ dYmAspCd = 0
 dYmFCd = 0
 dYmGth = 0
 dYmGepi = 0
-#dYmQ0au = 0
 dYmAspau = 0
 dYmAspCdau = 0
 dYmFCdau = 0
@@ -829,6 +833,14 @@ for (i in 1 : N) {
 }
 colmalfa = matrix(colmalfa)
 
+-((0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) *
+    0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)/
+    (((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - 
+    (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) * 
+    (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 
+    0.55^Alfa1)^2 + (Q0au[idouro[i]] - 0.429) * (Eresau[idouro[i]]^Alfa1 * log(Eresau[idouro[i]]))/(Eresau[idouro[i]]^Alfa1)^2)/
+    (((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))^2)
+
 dcolmexp_Q0 = D(Yajumedexp, 'Q0b')
 colmQ0 = 0
 for (i in 1 : N) {
@@ -892,6 +904,11 @@ Yajusup = 0
 Yajumed = 0
 Yajuinf = 0
 
+numpar = ncol(X)
+Ntotal = N * 3
+gl = Ntotal - numpar
+chi2critic = qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do xhi-quadrado com nivel de significancia de 0.05
+
 R = t(X) %*% invVy %*% X
 
 while(1) {
@@ -915,6 +932,7 @@ while(1) {
     Yy = Yexp - Yaju2
     ss = cbind(Yexp, Yaju2)
     if (chi2 == -1) {
+      chi2manual = sum((Yexp - Yaju2)^2/Yexp)
       chi2 = t(datb) %*% invVy %*% datb
     }
   }
@@ -955,11 +973,7 @@ while(1) {
 
 Afinal = round(A2, digits = 9)
 
-numpar = ncol(X)
-Ntotal = N * 3
-gl = Ntotal - numpar
 quirednovo = abs(chi2novo/gl)
-qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do xhi-quadrado com nivel de significancia de 0.05
 pchisq(chi2novo, df=gl, lower.tail=FALSE) # p-valor 
 
 a = Afinal[1]
@@ -1010,12 +1024,11 @@ cdcmm = cbind(ycdcmm, xcdcmm)
 cdcmm = as.data.frame(cdcmm)
 lm_cdcmm = tidy(lm(cdcmm))
 
-ycdrmm = log(Eres^alfa*Gth/((FCd*(Asp/AspCd)-1)*Q0*Gepi))
+ycdrmm = log(Eres^Alfa1*Gth/((FCd*RCd-1)*Q0*Gepi))
 xcdrmm = log(Eres)
 cdrmm = cbind(ycdrmm, xcdrmm)
 cdrmm = as.data.frame(cdrmm)
 lm_cdrmm = tidy(lm(cdrmm))
-
 
 #sAfinal = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)))))))
 
@@ -1088,15 +1101,41 @@ colnames(paramfinal) = c(
 #------------------------------------------------------------------------------------------------------------------------------------#
 
 plot(
-  ycdrmm ~ xcdrmm, 
-  xlab='log(Eres)', 
+  ycdcmm ~ xcdcmm, 
+  xlab='X - log(Eres)', 
   ylab = 'Y', 
-  ylim = c(-4.5, -3) , 
-  main = "DETERMINAÇÃO DE ALFA")
+  ylim = c(20, 30) , 
+  main = "DETERMINAÇÃO DE ALFA PELO MÉTODO Cd-COVERED MULTI MONITOR",
+  cex = 2,
+  col = "blue"
+  )
 abline(
-  lm(cdrmm)
+  lm(cdcmm),
+  col = "red",
+  lwd = 2
+)
+mtext(
+  bquote(
+    Alfa == .(as.numeric(round(lm_cdcmm[2,2],6))) +- 
+      .(as.numeric(round(lm_cdcmm[2,3],6)))
+  ), 
+  side = 3, line = -1, adj = 1
 )
 
+plot(
+  ycdrmm ~ xcdrmm, 
+  xlab='X - log(Eres)', 
+  ylab = 'Y', 
+  ylim = c(-6, 0) , 
+  main = "DETERMINAÇÃO DE ALFA PELO MÉTODO Cd-RATIO MULTI MONITOR",
+  cex = 2,
+  col = "blue"
+  )
+abline(
+  lm(cdrmm),
+  col = "red",
+  lwd = 2
+)
 mtext(
   bquote(
     Alfa == .(as.numeric(round(lm_cdrmm[2,2],6))) +- 

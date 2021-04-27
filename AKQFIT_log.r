@@ -1,4 +1,4 @@
-#AKQFIT R Edition
+#AKQFIT R Edition - COM LOG
 #Rafel Vanhoz Ribeiro
 
 #INICIO
@@ -11,7 +11,7 @@ library(scales) #Scales e uma bibioteca que configura, de modo facil, as notacoe
 library(corrplot)
 library(Hmisc)
 library(broom)
-library(CDFt)
+library(RColorBrewer)
 
 options(width = 1000)
 nls
@@ -72,6 +72,7 @@ data = read.csv(file.choose(), header = TRUE)
     FI = data$FI
     sFI = data$sFI
     idouro = data$idouro
+    irrad = data$irradiacao
 
 #O dataau e identico ao data, porem e para os dados do ouro.
     
@@ -274,14 +275,12 @@ for(i in 1:nrQ0) {
   }
 }
 Q0b = colMeans(Q0b, na.rm = TRUE)
-
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
 #Calcula o Y Superior da matrix Y
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
 
-#Ys = expression(AspCd / Efic / FCd / Gepi)
 Ys = expression(log(AspCd / Efic / FCd / Gepi))
 Ysuperior = eval(Ys)
 
@@ -292,11 +291,9 @@ Ysuperior = eval(Ys)
 #------------------------------------------------------------------------------------------------------------------------------------#
 
 Ym = expression(log(((FCdau * RCdau - 1) * (Gth * Gepiau)) / ((FCd * RCd - 1) * Gthau * Gepi)))
-#Ym = expression(((FCdau * RCdau - 1) * (Gth * Gepiau)) / ((FCd * RCd - 1) * Gthau * Gepi))
 Ymedio = 0
 for(i in 1:N){
    Ymedio[i] = log(((FCdau[idouro[i]] * (Aspau[idouro[i]] / AspCdau[idouro[i]]) - 1) * (Gth[i] * Gepiau[idouro[i]])) / ((FCd[i] * (Asp[i] / AspCd[i]) - 1) * (Gthau[idouro[i]] * Gepi[i])))
-   #Ymedio[i] = ((FCdau[idouro[i]] * RCdau[idouro[i]] - 1) * (Gth[i] * Gepiau[idouro[i]])) / ((FCd[i] * RCd[i] - 1) * (Gthau[idouro[i]] * Gepi[i]))
 }
 
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -309,7 +306,6 @@ Yi = expression(log(((Asp - AspCd / FCd) / (Aspau - AspCdau / FCdau)) * (Gthau /
 Yinferior = 0
 for(i in 1:N){
   Yinferior[i] = log(((Asp[i] - AspCd[i] / FCd[i]) / (Aspau[idouro[i]] - AspCdau[idouro[i]] / FCdau[idouro[i]])) * (Gthau[idouro[i]] / Gth[i] * Eficau[idouro[i]] / Efic[i]))
-  #Yinferior[i] = ((Asp[i] - AspCd[i] / FCd[i]) / (Aspau[idouro[i]] - AspCdau[idouro[i]] / FCdau[idouro[i]])) * (Gthau[idouro[i]] / Gth[i] * Eficau[idouro[i]] / Efic[i])
 }
 
 
@@ -416,10 +412,10 @@ vY = matrix(0, nrow = dim(matrix(Y))[1], ncol = dim(matrix(Y))[1])
 #covariancias entre YSuperior e YSuperior - Parte Diagonal
 for(i in 1:N) {
   for(j in i:N) {
-    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] == Egama[j])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] == Egama[j] & isTRUE(irrad[i] == irrad[j]))) {
       vY[i,j] = dYsAspCd[i] * dYsAspCd[j] * sAspCd[i]^2 + 
                 dYsFCd[i] * dYsFCd[j] * sFCd[i]^2 +
-                #dYsEfic[i] * dYsEfic[j] * sEfic[i]^2 +
+                dYsEfic[i] * dYsEfic[j] * sEfic[i]^2 +
                 dYsGepi[i] * dYsGepi[j] * sGepi[i]^2
       vY[j,i] = vY[i,j]
     }
@@ -427,24 +423,24 @@ for(i in 1:N) {
 }
 
 
-# #covariancias entre YSuperior e YSuperior - Isotopo diferente
-# for(i in 1:N) {
-#   for(j in i:N) {
-#     if(isTRUE(Isotopo[i] != Isotopo[j]) & isTRUE(Egama[i] != Egama[j])) {
-#       vY[i,j] =  dYsEfic[i] * dYsEfic[j] * sEfic[i]^2
-#       vY[j,i] = vY[i,j]
-#     }
-#   }
-# }
+#covariancias entre YSuperior e YSuperior - Isotopo diferente
+for(i in 1:N) {
+  for(j in i:N) {
+    if(isTRUE(Isotopo[i] != Isotopo[j]) & isTRUE(Egama[i] != Egama[j] & isTRUE(irrad[i] == irrad[j]))) {
+      vY[i,j] =  dYsEfic[i] * dYsEfic[j] * sEfic[i]^2
+      vY[j,i] = vY[i,j]
+    }
+  }
+}
 
 
 
 #covariancias entre YSuperior e YSuperior - Parte nao diagonal, mesmo isotopo, gama diferente
 for(i in 1:N) {
   for(j in i + 1:N) {
-    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] != Egama[j])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j]) & isTRUE(Egama[i] != Egama[j] & isTRUE(irrad[i] == irrad[j]))) {
       vY[i,j] = dYsFCd[i] * dYsFCd[j] * sFCd[i]^2 + 
-                #dYsEfic[i] * dYsEfic[j] * sEfic[i]^2 +
+                dYsEfic[i] * dYsEfic[j] * sEfic[i]^2 +
                 dYsGepi[i] * dYsGepi[j] * sGepi[i]^2
       vY[j,i] = vY[i,j]
     }
@@ -454,7 +450,7 @@ for(i in 1:N) {
 #covariancias entre YMedio e YMedio - Parte diagonal
 for(i in (N + 1):(N * 2)) {
   for(j in (i):(N * 2)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] == Egama[j - N])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] == Egama[j - N] & isTRUE(irrad[i - N] == irrad[j - N]))) {
       k = i - N
       l = j - N
       vY[i,j] = 
@@ -465,7 +461,7 @@ for(i in (N + 1):(N * 2)) {
                 dYmGth[k] * dYmGth[l] * sGth[k]^2 + 
                 dYmGepi[k] * dYmGepi[l] * sGepi[k]^2 +
                 #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 +
                 dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
                 dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
                 dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2 +
@@ -478,14 +474,14 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YMedio e YMedio - Parte nao diagonal, mesmo isotopo, gama diferente
 for(i in (N + 1):(N * 2)) {
   for(j in (i + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N] & isTRUE(irrad[i - N] == irrad[j - N]))) {
       k = i - N
       l = j - N
       vY[i,j] = dYmRCdau[idouro[k]] * dYmRCdau[idouro[l]] * sRCdau[idouro[k]]^2 + 
                 dYmGth[k] * dYmGth[l] * sGth[k]^2 + 
                 dYmGepi[k] * dYmGepi[l] * sGepi[k]^2 + 
                 #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                #dYmAspCdau[idouro[k]] * dYmAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 +
                 dYmFCdau[idouro[k]] * dYmFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
                 dYmGthau[idouro[k]] * dYmGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
                 dYmGepiau[idouro[k]] * dYmGepiau[idouro[l]] * sGepiau[idouro[k]]^2
@@ -496,10 +492,10 @@ for(i in (N + 1):(N * 2)) {
 
 
 
-#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente, irradiacao diferente
+#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente, ouro diferente
 for(i in (N + 1):(N * 2)) {
   for(j in (i + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i - N] != Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] != idouro[j - N])) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] != idouro[j - N]) & isTRUE(irrad[i - N] == irrad[j - N])) {
       k = i - N
       l = j - N
       vY[i,j] = #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
@@ -512,10 +508,10 @@ for(i in (N + 1):(N * 2)) {
   }
 }
 
-#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente, mesma irradiacao
+#covariancias entre YMedio e YMedio - Parte nao diagonal, com Isotopo diferente, mesmo ouro
 for(i in (N + 1):(N * 2)) {
   for(j in (i + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i - N] != Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] == idouro[j - N])) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N]) & isTRUE(Egama[i - N] != Egama[j - N]) & isTRUE(idouro[i - N] == idouro[j - N]) & isTRUE(irrad[i - N] == irrad[j - N])) {
       k = i - N
       l = j - N
       vY[i,j] = #dYmAspau[idouro[k]] * dYmAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
@@ -532,16 +528,16 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YInferior e YInferior - Parte Diagonal
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i):(N * 3)) {
-    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] == Egama[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] == Egama[j - N * 2]) & isTRUE(irrad[i - N * 2] == irrad[j - N * 2])) {
       k = i - N * 2
       l = j - N * 2
       vY[i,j] = dYiAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYiAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 + 
                 dYiFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 + 
                 dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
-                #dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2 +
+                dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2 +
                 dYiAsp[k] * dYiAsp[l] * sAsp[k]^2 +
-                #dYiEfic[k] * dYiEfic[l] * sEfic[k]^2 +
+                dYiEfic[k] * dYiEfic[l] * sEfic[k]^2 +
                 dYiAspCd[k] * dYiAspCd[l] * sAspCd[k]^2 
                 dYiGth[k] * dYiGth[l] * sGth[k]^2 + 
                 dYiFCd[k] * dYiFCd[l] * sFCd[k]^2
@@ -554,7 +550,7 @@ for(i in (N * 2 + 1):(N * 3)) {
 #covariancias entre YInferior e YInferior - Parte nao Diagonal, mesmo isotopo, gama diferente
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N * 2] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(irrad[i - N * 2] == irrad[j - N * 2])) {
       k = i - N * 2
       l = j - N * 2
       vY[i,j] = dYiAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
@@ -563,31 +559,31 @@ for(i in (N * 2 + 1):(N * 3)) {
                 dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 + 
                 dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2 +
                 dYiGth[k] * dYiGth[l] * sGth[k]^2 +
-                #dYiEfic[k] * dYiEfic[l] * sEfic[k]^2 +
+                dYiEfic[k] * dYiEfic[l] * sEfic[k]^2 +
                 dYiFCd[k] * dYiFCd[l] * sFCd[k]^2
       vY[j,i] = vY[i,j]
     }
   }
 } 
 
-#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente, irradiacao diferente
+#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente, ouro diferente
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i - N * 2] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]!=idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N * 2] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]!=idouro[j - N * 2]) & isTRUE(irrad[i - N * 2] == irrad[j - N * 2])) {
       k = i - N * 2
       l = j - N * 2
       vY[i,j] = dYiFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 + 
                 dYiGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2  
-                #dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2
+                dYiEficau[idouro[k]] * dYiEficau[idouro[l]] * sEficau[idouro[k]]^2
       vY[j,i] = vY[i,j]
     }
   }
 }
 
-#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente, mesma irradacao
+#covariancias entre YInferior e YInferior - Parte nao Diagonal, isotopo diferente, mesmo ouro
 for(i in (N * 2 + 1):(N * 3)) {
   for(j in (i + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i - N * 2] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]==idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N * 2] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N * 2] != Egama[j - N * 2]) & isTRUE(idouro[i - N * 2]==idouro[j - N * 2]) & isTRUE(irrad[i - N * 2] == irrad[j - N * 2])) {
       k = i - N * 2
       l = j - N * 2
       vY[i,j] = dYiAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
@@ -605,9 +601,9 @@ for(i in (N * 2 + 1):(N * 3)) {
 #covariancias entre YSuperior e YMedio - Parte diagonal - com Egama igual
 for(i in 1:N) {
   for(j in (N + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]==Egama[j - N])) {
+    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]==Egama[j - N]) & isTRUE(irrad[i] == irrad[j - N])) {
       k = j - N
-      vY[i,j] = dYsAspCd[i] * dYmAspCd[k] * sAspCd[i]^2 +
+      vY[i,j] = #dYsAspCd[i] * dYmAspCd[k] * sAspCd[i]^2 +
                 dYsFCd[i] * dYmFCd[k] * sFCd[i]^2 +
                 dYsGepi[i] * dYmGepi[k] * sGepi[i]^2 
       vY[j,i] = vY[i,j]
@@ -618,7 +614,7 @@ for(i in 1:N) {
 #covariancias entre YSuperior e YMedio - Parte nao diagonal - Isotopo Igual, com Egama diferente
 for(i in 1:N) {
   for(j in (N + 1):(N * 2)) {
-    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]!=Egama[j - N])) {
+    if(isTRUE(Isotopo[i]==Isotopo[j - N]) & isTRUE(Egama[i]!=Egama[j - N]) & isTRUE(irrad[i] == irrad[j - N])) {
       k = j - N
       vY[i,j] = dYsFCd[i] * dYmFCd[k] * sFCd[i]^2 + 
                 dYsGepi[i] * dYmGepi[k] * sGepi[i]^2 
@@ -631,11 +627,11 @@ for(i in 1:N) {
 #covariancias entre YSuperior e YInferior - Parte diagonal - Isotopo Igual, com Egama Igual
 for(i in 1:N) {
   for(j in (N * 2 + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] == Egama[j - N * 2])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] == Egama[j - N * 2]) & isTRUE(irrad[i] == irrad[j - N * 2])) {
       k = j - N * 2
       vY[i,j] = dYsAspCd[i] * dYmAspCd[k] * sAspCd[i]^2 +
                 dYsFCd[i] * dYmFCd[k] * sFCd[i]^2 +
-                #dYsEfic[i] * dYiEfic[k] * sEfic[i]^2 +
+                dYsEfic[i] * dYiEfic[k] * sEfic[i]^2 +
                 dYsGepi[i] * dYmGepi[k] * sGepi[i]^2 
                 
       vY[j,i] = vY[i,j]
@@ -646,9 +642,9 @@ for(i in 1:N) {
 #covariancias entre YSuperior e YInferior - Parte nao diagonal - Isotopo Igual, com Egama diferente
 for(i in 1:N) {
   for(j in (N * 2 + 1):(N * 3)) {
-    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] != Egama[j - N * 2])) {
+    if(isTRUE(Isotopo[i] == Isotopo[j - N * 2]) & isTRUE(Egama[i] != Egama[j - N * 2]) & isTRUE(irrad[i] == irrad[j - N * 2])) {
       k = j - N * 2
-      vY[i,j] = #dYsEfic[i] * dYiEfic[k] * sEfic[i]^2
+      vY[i,j] = dYsEfic[i] * dYiEfic[k] * sEfic[i]^2
                 dYsFCd[i] * dYiFCd[k] * sFCd[i]^2
       vY[j,i] = vY[i,j]
     }
@@ -658,11 +654,11 @@ for(i in 1:N) {
 #covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo diferente, mesma irradiacao
 for(i in (N + 1):(N * 2)) {
   for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] == idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] == idouro[j - N * 2]) & isTRUE(irrad[i - N] == irrad[j - N * 2])) {
       k = i - N
       l = j - N * 2
-      vY[i,j] = dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-        dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+      vY[i,j] = #dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
+        #dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
         dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
         dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2
       vY[j,i] = vY[i,j]
@@ -673,7 +669,7 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo diferente, irradiacao diferente
 for(i in (N + 1):(N * 2)) {
   for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] != idouro[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N] != Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(idouro[i - N] != idouro[j - N * 2]) & isTRUE(irrad[i - N] == irrad[j - N * 2])) {
       k = i - N
       l = j - N * 2
       vY[i,j] = dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
@@ -686,15 +682,15 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo Igual, com Egama igual
 for(i in (N + 1):(N * 2)) {
   for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] == Egama[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] == Egama[j - N * 2]) & isTRUE(irrad[i - N] == irrad[j - N * 2])) {
       k = i - N
       l = j - N * 2
-      vY[i,j] = dYmAsp[k] * dYiAsp[l] * sAsp[k]^2 + 
-                dYmAspCd[k] * dYiAspCd[l] * sAspCd[k]^2 + 
+      vY[i,j] = #dYmAsp[k] * dYiAsp[l] * sAsp[k]^2 + 
+                #dYmAspCd[k] * dYiAspCd[l] * sAspCd[k]^2 + 
                 dYmFCd[k] * dYiFCd[l] * sFCd[k]^2 + 
                 dYmGth[k] * dYiGth[l] * sGth[k]^2 + 
-                dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                #dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
+                #dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
                 dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 
       vY[j,i] = vY[i,j]
@@ -705,13 +701,13 @@ for(i in (N + 1):(N * 2)) {
 #covariancias entre YMedio e YInferior - Parte Diagonal - Isotopo Igual, com Egama diferente
 for(i in (N + 1):(N * 2)) {
   for(j in (N * 2):(N * 3)) {
-    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2])) {
+    if(isTRUE(Isotopo[i - N] == Isotopo[j - N * 2]) & isTRUE(Egama[i - N] != Egama[j - N * 2]) & isTRUE(irrad[i - N] == irrad[j - N * 2])) {
       k = i - N
       l = j - N * 2
       vY[i,j] = dYmFCd[k] * dYiFCd[l] * sFCd[k]^2 + 
                 dYmGth[k] * dYiGth[l] * sGth[k]^2 + 
-                dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
-                dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
+                #dYmAspau[idouro[k]] * dYiAspau[idouro[l]] * sAspau[idouro[k]]^2 +
+                #dYmAspCdau[idouro[k]] * dYiAspCdau[idouro[l]] * sAspCdau[idouro[k]]^2 + 
                 dYmFCdau[idouro[k]] * dYiFCdau[idouro[l]] * sFCdau[idouro[k]]^2 +
                 dYmGthau[idouro[k]] * dYiGthau[idouro[l]] * sGthau[idouro[k]]^2 
       vY[j,i] = vY[i,j]
@@ -783,16 +779,18 @@ Nb = nrow(A2)
 
 #Yajusupexp = expression((exp(Aa) * Eres^(2*Alfa1) * k0b) * (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
 #Yajusupexp = expression(Aa + (2 * Alfa1 * log(Eres)) + log(k0b) + log((((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
-Yajusupexp = expression(log((exp(Aa) * Eres^(2*Alfa1) * k0b) * (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
+Yajusupexp = expression(log((exp(Aa) * Eres^(2*Alfa1) * k0b) * 
+                              (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
+
 
             
 dcolsexp_a = D(Yajusupexp, 'Aa')
 colsa = 0
 for (i in 1:N) {
-  colsa[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 
-             0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/
-             ((exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/
-             Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+   colsa[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 
+              0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/
+              ((exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/
+              Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
   #colsa[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))
 }
 colsa = matrix(colsa)
@@ -822,6 +820,7 @@ for (i in 1:N) {
               Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
               (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
 }
+#colsq0Diag = diag(colsQ0)
 colsq0Diag = monta_matriz_por_isotopo(colsQ0)
 #colsq0Diag2 = diag(colsQ0)
 
@@ -890,7 +889,7 @@ for (i in 1 : N) {
               ((2 * Alfa1 + 1) * 0.55^Alfa1))))
 }
 colmQ0Diag = monta_matriz_por_isotopo(colmQ0)
-#colmQ0Diag2 = diag(colmQ0)
+#colmQ0Diag = diag(colmQ0)
 
 
 # for (i in 1 : N) {
@@ -955,11 +954,27 @@ Yajusup = 0
 Yajumed = 0
 Yajuinf = 0
 
+numpar = ncol(X)
+Ntotal = N * 3
+gl = Ntotal - numpar
+chi2critic = qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do chi-quadrado com nivel de significancia de 0.05
+
 R = t(X) %*% invVy %*% X
 
 while(1) {
   if(recalcularY == 1) {
 
+    Aa = A2[1]
+    Alfa1 = A2[2]
+    k0b=0
+    for (i in 1 : N) {
+      k0b[i] = matrix(A2[(i + nQ0 + 2)])
+    }
+    Q0b = 0
+    for (i in 1:nQ0) {
+      Q0b[i] = matrix(A2[i+2])
+    }
+    
     for (i in 1 : N) {
       #Yajusup[i] = Aa + (2 * Alfa1 * log(Eres[i])) + log(k0b[i]) + log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
       Yajusup[i] = log(exp(Aa) * Eres[i]^(2*Alfa1) * k0b[i] * (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
@@ -974,10 +989,9 @@ while(1) {
     Yy = Yexp - Yaju2
     
     ss = cbind(Yexp, Yaju2)
-    cvm = -CramerVonMisesTwoSamples(Yexp, Yaju2)
     #p_value = 1/6*exp(-CramerVonMisesTwoSamples(Yexp, Yaju2))
     if (chi2 == -1) {
-      #chi2 = sum((Yexp - Yaju2)^2/Yexp)
+      chi2manual = sum((Yexp - Yaju2)^2/Yexp)
       chi2 = t(datb) %*% invVy %*% datb
     }
   }
@@ -996,12 +1010,10 @@ while(1) {
   DA = invRlambda %*% t(X) %*% invVy %*% Yy
   Ynovo = X %*% DA
   DD = Yy - Ynovo
-  cvmnovo = -CramerVonMisesTwoSamples(Yy, Ynovo)
   chi2novo = t(DD) %*% invVy %*% DD
-  chidif2 = cvmnovo - cvm
   chidif = chi2novo - chi2
   loop = loop + 1
-  if (chidif >= 0) {
+  if (chidif > 0) {
     lambda = lambda * 2
     recalcularY = 1
   } else {
@@ -1016,38 +1028,32 @@ while(1) {
   }
 }
 
-Afinal = round(A2, digits = 9)
+Afinal = round(A2, digits = 7)
 
-numpar = ncol(X)
-Ntotal = N * 3
-gl = Ntotal - numpar
 quirednovo = abs(chi2novo/gl)
-qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do chi-quadrado com nivel de significancia de 0.05
-pchisq(chi2novo, df=gl, lower.tail=FALSE) # p-valor 
-
 
 a = Afinal[1]
 alfa = Afinal[2]
 
-# Q0 = 0
-# for (i in 1:nQ0) {
-#   Q0[i] = matrix(Afinal[i+2])
-# }
+Q0 = 0
+for (i in 1:nQ0) {
+  Q0[i] = matrix(Afinal[i+2])
+}
 
-# k0=0
-# for (i in 1 : N) {
-#   k0[i] = matrix(Afinal[(i + nQ0 + 2)])
-# }
+k0=0
+for (i in 1 : N) {
+  k0[i] = matrix(Afinal[(i + nQ0 + 2)])
+}
 
- Q0 = 0
- for (i in 1:N) {
-   Q0[i] = Q0b[IN[i]]
- }
- 
- k0=0
- for (i in 1 : N) {
-   k0[i] = k0b[i]
- }
+ # Q0 = 0
+ # for (i in 1:N) {
+ #   Q0[i] = Q0b[IN[i]]
+ # }
+ # 
+ # k0=0
+ # for (i in 1 : N) {
+ #   k0[i] = k0b[i]
+ # }
 
 
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -1059,36 +1065,49 @@ alfa = Afinal[2]
 param = c(unique(Isotopo), Isotopo)
 parQ0 = 0
 for (i in 1 : nQ0) {
-  parQ0[i] = 'Q0'
+  parQ0[i] = "Q0"
 }
+parQ0b = 0
+for (i in 1 : nQ0) {
+  parQ0b[i] = "--"
+}
+parQ0 = cbind(parQ0, parQ0b)
 
 park0 = 0
 for (i in 1 : N) {
   park0[i] = 'k0'
 }
+park0=matrix(park0)
 
+park0 = cbind(park0, Egama)
 
 #UTILIZANDO FUNCAO PARA VERIFICAR O INTERCEPTO DAS RETAS DO METODOS CD-COVERED MULTI-MONITOR (CDCMM) E CD-RATIO MULTI-MONITOR (CDRMM)
 
-ycdcmm = log(Eres^-alfa*AspCd/(k0*Efic*FCd*Q0*Gepi))
+ycdcmm=0
+for (i in 1:N) {
+  ycdcmm[i] = log(Eres[i]^-alfa*AspCd[i]/(k0[i]*Efic[i]*FCd[i]*Q0[IN[i]]*Gepi[i]))
+}
 xcdcmm = log(Eres)
 cdcmm = cbind(ycdcmm, xcdcmm)
 cdcmm = as.data.frame(cdcmm)
 lm_cdcmm = tidy(lm(cdcmm))
 
-ycdrmm = log(Eres^alfa*Gth/((FCd*(Asp/AspCd)-1)*Q0*Gepi))
+ycdrmm=0
+for (i in 1:N) {
+  ycdrmm[i] = log(Eres[i]^alfa*Gth[i]/((FCd[i]*RCd[i]-1)*Q0[IN[i]]*Gepi[i]))
+}
 xcdrmm = log(Eres)
 cdrmm = cbind(ycdrmm, xcdrmm)
 cdrmm = as.data.frame(cdrmm)
 lm_cdrmm = tidy(lm(cdrmm))
 
-plot(ycdrmm ~ xcdrmm, 
-     xlab='log(Eres)', 
-     ylab = 'Y', 
-     ylim = c(-4.5, -3) , 
-     main = "DETERMINAÇÃO DE ALFA")
-abline(lm(cdrmm))
-mtext(bquote(Alfa == .(as.numeric(round(lm_cdrmm[2,2],6))) +- .(as.numeric(round(lm_cdrmm[2,3],6)))), side = 3, line = -1, adj = 1)
+# plot(ycdrmm ~ xcdrmm, 
+#      xlab='log(Eres)', 
+#      ylab = 'Y', 
+#      ylim = c(-5, -5) , 
+#      main = "DETERMINAÇÃO DE ALFA")
+# abline(lm(cdrmm))
+# mtext(bquote(Alfa == .(as.numeric(round(lm_cdrmm[2,2],6))) +- .(as.numeric(round(lm_cdrmm[2,3],6)))), side = 3, line = -1, adj = 1)
 
 sY = sqrt(diag(vY))
 
@@ -1098,12 +1117,12 @@ sAfinal = matrix(sqrt(abs(diag(invRlambda))))
 
 #alfa = lm_cdcmm$estimate[2]
 #salfa = lm_cdcmm$std.error[2]
-#alfa = Afinal[2]
-#salfa = sAfinal[2]
+alfa = Afinal[2]
+salfa = sAfinal[2]
 sa = sAfinal[1]
 
-alfa = as.numeric(lm_cdrmm[2,2])
-salfa = as.numeric(lm_cdrmm[2,3])
+# alfa = as.numeric(lm_cdrmm[2,2])
+# salfa = as.numeric(lm_cdrmm[2,3])
 
 sQ0 = 0
 for (i in 1:nQ0) {
@@ -1115,12 +1134,18 @@ for (i in 1 : N) {
 }
 
 
-param2 = cbind(matrix(param), c(parQ0, park0), matrix(scientific(Afinal[c(-1,-2)], digits = 5)), matrix(scientific(sAfinal[c(-1,-2)], digits = 5)))
+param2 = cbind(matrix(param), rbind(parQ0, park0), matrix(scientific(Afinal[c(-1,-2)], digits = 5)), matrix(scientific(sAfinal[c(-1,-2)], digits = 5)))
 param3 = c('a', 'alfa')
-param4 = cbind(param3, c(a, alfa), scientific(c(sa, salfa), digits = 4), c('-','-'))
+# param4 = cbind(param3, c(a, alfa), scientific(c(sa, salfa), digits = 4), c('--','--'),c('--','--'))
+paramfinal_a_alfa = cbind(param3, c(a, alfa), scientific(c(sa, salfa), digits = 4))
+colnames(paramfinal_a_alfa) = c('Parametro', 'Valor', 'Incerteza')
 
-paramfinal = rbind(param4, param2, colnames(c('Alvos','Valores', 'Valores', 'Incerteza')))
-colnames(paramfinal) = c('Alvos','Valores', 'Valores', 'Incerteza')
+paramfinal_k0_Q0 = rbind(param2)
+colnames(paramfinal_k0_Q0) = c('Alvo','Parametro', 'Energia Gama','Valor', 'Incerteza')
+
+
+erro_relativo = abs((k0-k0_lit)/k0_lit*100)
+comparar_literatura = cbind(k0, k0_lit, erro_relativo)
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -1129,6 +1154,56 @@ colnames(paramfinal) = c('Alvos','Valores', 'Valores', 'Incerteza')
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
+
+plot(
+  ycdcmm ~ xcdcmm, 
+  xlab='X - log(Eres)', 
+  frame = FALSE,
+  ylab = 'Y', 
+  ylim = c(25, 26) , 
+  main = "DETERMINAÇÃO DE ALFA PELO MÉTODO Cd-COVERED MULTI MONITOR",
+  cex = 1,
+  col = "blue",
+  pch = 21,
+  bg = "lightblue"
+)
+abline(
+  lm(cdcmm),
+  col = "lightcoral",
+  lwd = 2
+)
+mtext(
+  bquote(
+    Alfa == .(as.numeric(round(lm_cdcmm[2,2],6))) +- 
+      .(as.numeric(round(lm_cdcmm[2,3],6)))
+  ), 
+  side = 3, line = -1, adj = 1
+)
+
+plot(
+  ycdrmm ~ xcdrmm, 
+  xlab='X - log(Eres)',
+  frame = FALSE,
+  ylab = 'Y', 
+  ylim = c(-4, -3.8) , 
+  main = "DETERMINAÇÃO DE ALFA PELO MÉTODO Cd-RATIO MULTI MONITOR",
+  cex = 1,
+  col = "blue",
+  pch = 21,
+  bg = "lightblue"
+)
+abline(
+  lm(cdrmm),
+  col = "lightcoral",
+  lwd = 2
+)
+mtext(
+  bquote(
+    Alfa == .(as.numeric(round(lm_cdrmm[2,2],6))) +- 
+      .(as.numeric(round(lm_cdrmm[2,3],6)))
+  ), 
+  side = 3, line = -1, adj = 1
+)
 
 vetorx=0
 for (i in 1 : Ntotal) {
@@ -1152,33 +1227,32 @@ pointname2 = c(Egama, Egama)
 # ggplot(cdcmm, aes(x=xcdcmm, y=ycdcmm)) + geom_point() + geom_smooth(method="lm")
 # ggplot(cdrmm, aes(x=xcdrmm, y=ycdrmm)) + geom_point() + geom_smooth(method="lm")
 
-paramfinal
 
-covcor = matrix(data = 0, nrow = nrow(abs(solve(Rlambda))), ncol = ncol(abs(solve(Rlambda))))
-for (i in 1:numpar) {
-  for (j in 1:numpar) {
-    #covcor[i,j] = vY[i,j]/sqrt(vY[i,i]*vY[j,j])
-    #covcor[i,j] = (Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,j])/sqrt(abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,i])*abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[j,j]))
-    covcor[i,j] = (invRlambda[i,j])/(sqrt(abs(invRlambda[i,i]))*sqrt(abs(invRlambda[j,j])))
-    #covcor[i,j] = vpar[i,j]/sqrt(abs(vpar[i,i])*abs(vpar[j,j]))
-  }
-}
-for (i in 1:numpar) {
-  if(covcor[i,i]<1) {
-    covcor[i,i] = covcor[i,i] *-1
-  }
-}
+# covcor = matrix(data = 0, nrow = nrow(abs(solve(Rlambda))), ncol = ncol(abs(solve(Rlambda))))
+# for (i in 1:numpar) {
+#   for (j in 1:numpar) {
+#     #covcor[i,j] = vY[i,j]/sqrt(vY[i,i]*vY[j,j])
+#     #covcor[i,j] = (Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,j])/sqrt(abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[i,i])*abs(Ginv(Rlambda, tol = 5e-11*sqrt(.Machine$double.eps))[j,j]))
+#     covcor[i,j] = (invRlambda[i,j])/(sqrt(invRlambda[i,i])*sqrt(invRlambda[j,j]))
+#     #covcor[i,j] = vpar[i,j]%/%sqrt(vpar[i,i]%*%vpar[j,j])
+#   }
+# }
+# for (i in 1:numpar) {
+#   if(covcor[i,i]<1) {
+#     covcor[i,i] = covcor[i,i] *-1
+#   }
+# }
 
 string = 0
 for (i in 1:numpar-2) {
   string[i] = '-'
 }
 
-rownames(covcor) = rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, park0))))
-colnames(covcor) = t(rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, park0)))))
-
-# corrplot(covcor, method = 'color', type = 'lower')
-# covcor = round(covcor, digits = 4)
+# rownames(covcor) = rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, park0))))
+# es(covcor) = t(rbind(matrix(param3), matrix(str_c(param, string, c(parQ0, park0)))))
+# 
+#  corrplot(covcor, method = 'color', type = 'lower')
+#  covcor = round(covcor, digits = 4)
 
 vetorx=0
 for (i in 1 : Ntotal) {
@@ -1194,58 +1268,111 @@ pointname = c(Isotopo)
 pointname2 = c(Egama)
 NN = N*2
 
-#RESIDUOS DO K0
+#RESIDUOS DO K0 PONDERADOS
 plot( 
-  log(Eres), k0-k0_lit,  
+  log(Eres), (k0_lit-k0)/sk0,
+  frame = FALSE,
   main = 'RESIDUOS K0',
   ylim = c(-4,4),
+  xlim = c(0, 10),
   xlab = 'log(Eres)',
-  ylab = 'k0 (akqft)/k0 (literatura)',
+  ylab = 'k0 (akqft) - k0 (literatura)',
   col = 'Blue'
-  )
+)
+text(
+  log(Eres), 
+  (k0_lit-k0)/sk0, 
+  labels = pointname, 
+  cex = 0.7, 
+  pos = 4
+)
 abline(
   h = 0
-  )
+)
 abline(
   h = c(-2,2),
   lty = 3
-  )
+)
 
 #REDISUOS PONDERADOS PELO DESVIO PADRAO PARA K0
-plot(Egama, (DD[(N+1):NN]/sY[(N+1):NN]), 
-     main = 'RESIDUOS DO AJUSTE PONDERADOS PELO DESVIO PADRAO - k0', 
-     ylab = '(Yexp-Yaju)/sigmaY', 
-     xlab = 'Energia (keV)', 
-     ylim = c(-7, 7),
-     pch = 20,
-     col = 'Blue')
-text(Egama, (DD[(N+1):NN]/sY[(N+1):NN]), labels = pointname, cex = 0.7, pos = 3)
-abline(a=0, b=0, h=c(2,-2), col = "lightgray", lty = 3)
+plot(
+  Egama, (DD[(N+1):NN]/sY[(N+1):NN]),
+  frame = FALSE,
+  main = 'RESIDUOS DO AJUSTE PONDERADOS PELO DESVIO PADRAO - k0', 
+  ylab = '(Yexp-Yaju)/sigmaY', 
+  xlab = 'Energia (keV)', 
+  ylim = c(-7, 7),
+  pch = 20,
+  col = 'Blue'
+)
+text(
+  Egama, 
+  (DD[(N+1):NN]/sY[(N+1):NN]), 
+  labels = pointname, 
+  cex = 0.7, 
+  pos = 3
+)
+abline(
+  h=0
+)
+abline(
+  h=c(2,-2),
+  lty = 3
+)
 #text(xplot, (DD[(N+1):NN]/sY[(N+1):NN]), labels = pointname2, cex = 0.7, pos = 1)
 
 #REDISUOS PONDERADOS PELO DESVIO PADRAO PARA Q0
-plot(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), 
-     main = 'RESIDUOS DO AJUSTE PONDERADOS PELO DESVIO PADRAO - Q0', 
-     ylab = '(Yexp-Yaju)/sigmaY', 
-     xlab = 'Energia (keV)', 
-     ylim = c(-7, 7),
-     pch = 20,
-     col = 'red')
-text(Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), labels = pointname, cex = 0.7, pos = 3)
-abline(a=0, b=0, h=c(2,-2), col = "lightgray", lty = 3)
+plot(
+  Egama, (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]),
+  frame = FALSE,
+  main = 'RESIDUOS DO AJUSTE PONDERADOS PELO DESVIO PADRAO - Q0', 
+  ylab = '(Yexp-Yaju)/sigmaY', 
+  xlab = 'Energia (keV)', 
+  ylim = c(-7, 7),
+  pch = 20,
+  col = 'red'
+)
+text(
+  Egama, 
+  (DD[(NN+1):Ntotal]/sY[(NN+1):Ntotal]), 
+  labels = pointname, 
+  cex = 0.7, 
+  pos = 3
+)
+abline(
+  h=0
+)
+abline(
+  h=c(2,-2),
+  lty = 3
+)
 
 sink('Resultados.txt', append = FALSE, split = FALSE)
 'VALORES DOS PARAMETROS'
 '----------------------------------------------------------------'
 '----------------------------------------------------------------'
-paramfinal
+paramfinal_a_alfa
+'----------------------------------------------------------------'
+paramfinal_k0_Q0
+'----------------------------------------------------------------'
+'k0 DO k0_database_2020_08_13.xls E ERRO RELATIVO'
 '----------------------------------------------------------------'
 '----------------------------------------------------------------'
-covcor
+comparar_literatura
+colnames(comparar_literatura) = c('k0', 'k0 - Liter.', 'Erro (%)')
+'----------------------------------------------------------------'
+'----------------------------------------------------------------'
+# covcor
 sink()
 
-print(paramfinal)
+print(paramfinal_a_alfa)
+paramfinal_k0_Q0
 
+comparar_literatura
+colnames(comparar_literatura) = c('k0', 'k0 - Liter.', 'Erro relativo')
+
+matrix1= matrix(1, ncol = dim(invRlambda)[1], nrow = dim(invRlambda)[1])
+teste = invRlambda-(matrix1%*%invRlambda)*(1/dim(invRlambda)[1])
 
 # ass = 0
 # for (i in 1:N) {
