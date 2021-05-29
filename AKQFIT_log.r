@@ -927,9 +927,9 @@ col4 = rbind(colsK0, colmK0, coliK0)
 X = cbind(col1, col2, col3, col4)
 
 #vpar = Ginv(t(X) %*% Ginv(vY, tol = 0.000000000000005*sqrt(.Machine$double.eps)) %*% X)
-#vpar = Ginv(t(X) %*% Ginv(vY, tol = 5e-16*sqrt(.Machine$double.eps)) %*% X, tol = 5e-16*sqrt(.Machine$double.eps))
-vpar = solve(t(X) %*% solve(vY) %*% X)
-par = vpar %*% t(X) %*% solve(vY) %*% Y
+# #vpar = Ginv(t(X) %*% Ginv(vY, tol = 5e-16*sqrt(.Machine$double.eps)) %*% X, tol = 5e-16*sqrt(.Machine$double.eps))
+# vpar = solve(t(X) %*% solve(vY) %*% X)
+# par = vpar %*% t(X) %*% solve(vY) %*% Y
 
 
 #------------------------------------------------------------------------------------------------------------------------------------#
@@ -957,44 +957,41 @@ Yajuinf = 0
 numpar = ncol(X)
 Ntotal = N * 3
 gl = Ntotal - numpar
-chi2critic = qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do chi-quadrado com nivel de significancia de 0.05
+chi2_critico = qchisq(0.05, df=gl, lower.tail=FALSE) #valor critico do chi-quadrado com nivel de significancia de 0.05
 
 R = t(X) %*% invVy %*% X
 
 while(1) {
+  
+  Aa = A2[1]
+  Alfa1 = A2[2]
+  k0b=0
+  for (i in 1 : N) {
+    k0b[i] = matrix(A2[(i + nQ0 + 2)])
+  }
+  Q0b = 0
+  for (i in 1:nQ0) {
+    Q0b[i] = matrix(A2[i+2])
+  }
+  
   if(recalcularY == 1) {
-
-    Aa = A2[1]
-    Alfa1 = A2[2]
-    k0b=0
     for (i in 1 : N) {
-      k0b[i] = matrix(A2[(i + nQ0 + 2)])
-    }
-    Q0b = 0
-    for (i in 1:nQ0) {
-      Q0b[i] = matrix(A2[i+2])
-    }
-    
-    for (i in 1 : N) {
-      #Yajusup[i] = Aa + (2 * Alfa1 * log(Eres[i])) + log(k0b[i]) + log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
       Yajusup[i] = log(exp(Aa) * Eres[i]^(2*Alfa1) * k0b[i] * (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
-      #Yajusup[i] = exp(Aa) * Eres[i]^(2*Alfa1) * k0b[i] * (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))
-      #Yajumed[i] = (((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))) / (((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))
       Yajumed[i] = log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))) / (((Q0au[idouro[i]]-0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))))
-      #Yajuinf[i] = k0b[i]
       Yajuinf[i] = log(k0b[i])
     }
-    Yaju2 = matrix(c(Yajusup, Yajumed, Yajuinf))
-    datb = Yexp - Yaju2
-    Yy = Yexp - Yaju2
+    Yaju = matrix(c(Yajusup, Yajumed, Yajuinf))
+    delta_Y = Yexp - Yaju
+    Y_linha = Yexp - Yaju
     
-    ss = cbind(Yexp, Yaju2)
-    #p_value = 1/6*exp(-CramerVonMisesTwoSamples(Yexp, Yaju2))
+    Yexp_Yaju = cbind(Yexp, Yaju)
+    
     if (chi2 == -1) {
-      chi2manual = sum((Yexp - Yaju2)^2/Yexp)
-      chi2 = t(datb) %*% invVy %*% datb
+      chi2manual = sum((Yexp - Yaju)^2/Yexp)
+      chi2_inicial = t(delta_Y) %*% invVy %*% delta_Y
     }
   }
+  
   Rlambda = matrix(0, nrow = nrow(R), ncol = ncol(R))
   for (i in 1: nrow(Rlambda)) {
     for (j in 1: ncol(Rlambda)) {
@@ -1006,21 +1003,20 @@ while(1) {
     }
   }
   invRlambda = solve(Rlambda)
-  #DA = Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)) %*% t(X) %*% invVy %*% Yy
-  DA = invRlambda %*% t(X) %*% invVy %*% Yy
-  Ynovo = X %*% DA
-  DD = Yy - Ynovo
-  chi2novo = t(DD) %*% invVy %*% DD
-  chidif = chi2novo - chi2
+  delta_A = invRlambda %*% t(X) %*% invVy %*% Y_linha
+  A_novo = A2 + delta_A
+  Y_novo = X %*% delta_A
+  DD = Y_linha - Y_novo
+  chi2_novo = t(DD) %*% invVy %*% DD
+  chidif = chi2_novo - chi2_inicial
   loop = loop + 1
   if (chidif > 0) {
     lambda = lambda * 2
     recalcularY = 1
   } else {
-      lambda = lambda / 2
-      Anovo = A2 + DA
-      A2 = Anovo
-      chi2 = chi2novo
+      lambda = lambda / 10
+      A2 = A_novo
+      chi2_inicial = chi2_novo
       recalcularY = 1
   }
   if ((isTRUE(abs(chidif) < 1.0) & isTRUE(abs(chidif) > 0.0000001)) | loop == 100) {
@@ -1028,21 +1024,149 @@ while(1) {
   }
 }
 
-Afinal = round(A2, digits = 7)
+A_final = round(A2, digits = 7)
 
-quirednovo = abs(chi2novo/gl)
+chi2_red = abs(chi2_novo/gl)
 
-a = Afinal[1]
-alfa = Afinal[2]
+
+
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+# RECALCULANDO X_LINHA
+# DERIVADAS PARCIAIS DO YSUPERIOR
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+
+Aa = A2[1]
+Alfa1 = A2[2]
+k0b=0
+for (i in 1 : N) {
+  k0b[i] = matrix(A2[(i + nQ0 + 2)])
+}
+Q0b = 0
+for (i in 1:nQ0) {
+  Q0b[i] = matrix(A2[i+2])
+}
+
+
+Yajusupexp = expression(log((exp(Aa) * Eres^(2*Alfa1) * k0b) * 
+                              (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
+
+
+
+dcolsexp_a = D(Yajusupexp, 'Aa')
+colsa = 0
+for (i in 1:N) {
+  colsa[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 
+                                                           0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/
+    ((exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/
+                                                    Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+}
+colsa = matrix(colsa)
+
+dcolsexp_alfa = D(Yajusupexp, 'Alfa1')
+colsalfa = 0
+for (i in 1:N) {
+  colsalfa[i] = (exp(Aa) * (Eres[i]^(2 * Alfa1) * (log(Eres[i]) * 2)) * k0b[i] *
+                   (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 +
+                                                                      1) * 0.55^Alfa1))) - (exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) *
+                   (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 *
+                                                                   log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) *
+                      (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2))/((exp(Aa) *
+                                                                             Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+                                                                                                                (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+}
+colsalfa = matrix(colsalfa)
+
+dcolsexp_Q0 = D(Yajusupexp, 'Q0b')
+colsQ0=0
+for (i in 1:N) {
+  colsQ0[i] = (exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i]) * (1/Eres[i]^Alfa1)/((exp(Aa) *
+                                                                               Eres[i]^(2 * Alfa1) * k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+                                                                                                                  (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+}
+colsq0Diag = monta_matriz_por_isotopo(colsQ0)
+
+dcolsexp_k0 = D(Yajusupexp, 'k0b')
+colsK0 = 0
+for (i in 1:N) {
+  colsK0[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +
+                                                 (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/((exp(Aa) * Eres[i]^(2 * Alfa1) *
+                                                                                             k0b[i]) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 +
+                                                                                                                                                          1) * 0.55^Alfa1))))
+}
+colsK0 = diag(colsK0)
+# 
+
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+# DERIVADAS PARCIAIS DO YMEDIO
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+
+Yajumedexp = expression(log((((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1))) / (((Q0au-0.429)/Eresau^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
+
+colma = matrix(0, N)
+
+dcolmexp_alfa = D(Yajumedexp, 'Alfa1')
+colmalfa = 0
+for (i in 1 : N) {
+  colmalfa[i] = -(((0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 *log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] -0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - (((Q0b[IN[i]] -0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) *(0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0au[idouro[i]] -0.429) * (Eresau[idouro[i]]^Alfa1 * log(Eresau[idouro[i]]))/(Eresau[idouro[i]]^Alfa1)^2)/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))^2)/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) +(0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]] -0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))))
+}
+colmalfa = matrix(colmalfa)
+
+dcolmexp_Q0 = D(Yajumedexp, 'Q0b')
+colmQ0 = 0
+for (i in 1 : N) {
+  colmQ0[i] = 1/Eres[i]^Alfa1/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) +(0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/((((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(((Q0au[idouro[i]] - 0.429)/Eresau[idouro[i]]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+}
+colmQ0Diag = monta_matriz_por_isotopo(colmQ0)
+
+colmK0 = diag(rep(0, nrow(colmQ0Diag)))
+
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+# DERIVADAS PARCIAIS DO INFERIOR
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+
+Yajuinfexp = expression(log(k0b))
+
+colialfa = matrix(0, nrow(colmQ0Diag))
+colia = matrix(0, nrow(colmQ0Diag))
+coliQ0 = matrix(0, N, ncol(colsq0Diag))
+
+dcoli_k0 = D(Yajuinfexp, 'k0b')
+coliK0 = 0
+for (i in 1:N) {
+  coliK0[i] = 1/k0b[i]
+}
+coliK0 = diag(coliK0)
+
+col1 = rbind(colsa, colma, colia)
+col2 = rbind(colsalfa, colmalfa, colialfa)
+col3 = rbind(colsq0Diag, colmQ0Diag, coliQ0)
+col4 = rbind(colsK0, colmK0, coliK0)
+
+X_linha = cbind(col1, col2, col3, col4)
+
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+# DEFININDO OS PARAMETROS
+#------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+
+a = A_final[1]
+alfa = A_final[2]
 
 Q0 = 0
 for (i in 1:nQ0) {
-  Q0[i] = matrix(Afinal[i+2])
+  Q0[i] = matrix(A_final[i+2])
 }
 
 k0=0
 for (i in 1 : N) {
-  k0[i] = matrix(Afinal[(i + nQ0 + 2)])
+  k0[i] = matrix(A_final[(i + nQ0 + 2)])
 }
 
  # Q0 = 0
@@ -1111,30 +1235,30 @@ lm_cdrmm = tidy(lm(cdrmm))
 
 sY = sqrt(diag(vY))
 
-#sAfinal = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)))))))
+#sA_final = abs(matrix(sqrt(abs(diag(Ginv(Rlambda, tol = 5e-16*sqrt(.Machine$double.eps)))))))
 
-sAfinal = matrix(sqrt(abs(diag(invRlambda))))
+sA_final = matrix(sqrt(abs(diag(invRlambda))))
 
 #alfa = lm_cdcmm$estimate[2]
 #salfa = lm_cdcmm$std.error[2]
-alfa = Afinal[2]
-salfa = sAfinal[2]
-sa = sAfinal[1]
+alfa = A_final[2]
+salfa = sA_final[2]
+sa = sA_final[1]
 
 # alfa = as.numeric(lm_cdrmm[2,2])
 # salfa = as.numeric(lm_cdrmm[2,3])
 
 sQ0 = 0
 for (i in 1:nQ0) {
-  sQ0[i] = matrix(sAfinal[i+2])
+  sQ0[i] = matrix(sA_final[i+2])
 }
 sk0=0
 for (i in 1 : N) {
-  sk0[i] = matrix(sAfinal[(i + nQ0 + 2)])
+  sk0[i] = matrix(sA_final[(i + nQ0 + 2)])
 }
 
 
-param2 = cbind(matrix(param), rbind(parQ0, park0), matrix(scientific(Afinal[c(-1,-2)], digits = 5)), matrix(scientific(sAfinal[c(-1,-2)], digits = 5)))
+param2 = cbind(matrix(param), rbind(parQ0, park0), matrix(scientific(A_final[c(-1,-2)], digits = 5)), matrix(scientific(sA_final[c(-1,-2)], digits = 5)))
 param3 = c('a', 'alfa')
 # param4 = cbind(param3, c(a, alfa), scientific(c(sa, salfa), digits = 4), c('--','--'),c('--','--'))
 paramfinal_a_alfa = cbind(param3, c(a, alfa), scientific(c(sa, salfa), digits = 4))
@@ -1162,8 +1286,8 @@ plot(
   ylab = 'Y', 
   ylim = c(25, 26) , 
   main = "DETERMINAÇÃO DE ALFA PELO MÉTODO Cd-COVERED MULTI MONITOR",
-  cex = 1,
-  col = "blue",
+  cex = 1.5,
+  col = "deepskyblue2",
   pch = 21,
   bg = "lightblue"
 )
@@ -1187,8 +1311,8 @@ plot(
   ylab = 'Y', 
   ylim = c(-4, -3.8) , 
   main = "DETERMINAÇÃO DE ALFA PELO MÉTODO Cd-RATIO MULTI MONITOR",
-  cex = 1,
-  col = "blue",
+  cex = 1.5,
+  col = "deepskyblue2",
   pch = 21,
   bg = "lightblue"
 )
@@ -1273,11 +1397,13 @@ plot(
   log(Eres), (k0_lit-k0)/sk0,
   frame = FALSE,
   main = 'RESIDUOS K0',
-  ylim = c(-4,4),
+  ylim = c(-6,6),
   xlim = c(0, 10),
   xlab = 'log(Eres)',
-  ylab = 'k0 (akqft) - k0 (literatura)',
-  col = 'Blue'
+  ylab = 'k0 (akqft) / k0 (literatura)',
+  cex = 1.5,
+  col = 'deepskyblue2',
+  pch=19,
 )
 text(
   log(Eres), 
@@ -1302,8 +1428,9 @@ plot(
   ylab = '(Yexp-Yaju)/sigmaY', 
   xlab = 'Energia (keV)', 
   ylim = c(-7, 7),
-  pch = 20,
-  col = 'Blue'
+  pch = 19,
+  cex = 1.5,
+  col = 'darkolivegreen3'
 )
 text(
   Egama, 
@@ -1329,8 +1456,9 @@ plot(
   ylab = '(Yexp-Yaju)/sigmaY', 
   xlab = 'Energia (keV)', 
   ylim = c(-7, 7),
-  pch = 20,
-  col = 'red'
+  pch = 19,
+  cex=1.5,
+  col = 'brown1'
 )
 text(
   Egama, 
@@ -1383,3 +1511,26 @@ teste = invRlambda-(matrix1%*%invRlambda)*(1/dim(invRlambda)[1])
 # for (i in 1:N) {
 #   ass2[i] = log((((Q0b[IN[i]]-0.429)/Eres[i]^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))) 
 # }
+
+
+
+
+# dYajusup_exp = expression(log(exp(Aa) * Eres^(2*Alfa1) * k0b * (((Q0b-0.429)/Eres^Alfa1) + (0.429/((2*Alfa1+1)*0.55^Alfa1)))))
+# dYajusup_a_exp = D(dYajusup_exp_a,'Aa')
+# dYajusup_alfa_exp = D(dYajusup_exp_a,'Alfa1')
+# dYajusup_k0b_exp = D(dYajusup_exp_a,'k0b')
+# dYajusup_Q0b_exp = D(dYajusup_exp_a,'Q0b')
+
+# dYajusup_a=0
+# dYajusup_alfa=0
+# dYajusup_k0b=0
+# dYajusup_Q0b=0
+# for (i in 1 : N) {
+# dYajusup_a[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+# dYajusup_alfa[i] = (exp(Aa) * (Eres[i]^(2 * Alfa1) * (log(Eres[i]) * 2)) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))) - exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (0.429 * (2 * 0.55^Alfa1 + (2 * Alfa1 + 1) * (0.55^Alfa1 * log(0.55)))/((2 * Alfa1 + 1) * 0.55^Alfa1)^2 + (Q0b[IN[i]] - 0.429) * (Eres[i]^Alfa1 * log(Eres[i]))/(Eres[i]^Alfa1)^2))/(exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+# dYajusup_k0b[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1)))/(exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+# dYajusup_Q0b[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (1/Eres[i]^Alfa1)/(exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
+# }
+# 
+# Yexp-Yajusup
+# dYajusup_a*
