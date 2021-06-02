@@ -203,11 +203,11 @@ sAspCdau = AspCdau*sqrt((sNaCdau/NaCdau)^2 +
                           (swCdau/wCdau)^2)
 
 
-sRCd = sqrt(
+sRCd = RCd*sqrt(
   (sAsp/Asp)^2+
   (sAspCd/AspCd)^2
   )
-sRCdau = sqrt(
+sRCdau = RCdau*sqrt(
   (sAspau/Aspau)^2+
   (sAspCdau/AspCdau)^2
   )
@@ -979,7 +979,7 @@ Yajuinf = 0
 
 A_final = round(A_novo, digits = 7)
 
-chi2_red = abs(chi2_novo/gl)
+chi2_red = chi2_novo/gl
 
 #------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------------------------------------------------------------#
