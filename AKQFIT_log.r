@@ -1353,5 +1353,5 @@ teste = invRlambda-(matrix1%*%invRlambda)*(1/dim(invRlambda)[1])
 # dYajusup_Q0b[i] = exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (1/Eres[i]^Alfa1)/(exp(Aa) * Eres[i]^(2 * Alfa1) * k0b[i] * (((Q0b[IN[i]] - 0.429)/Eres[i]^Alfa1) + (0.429/((2 * Alfa1 + 1) * 0.55^Alfa1))))
 # }
 # 
-# Yexp-Yajusup
+# Yexp-Yajusu
 # dYajusup_a*
